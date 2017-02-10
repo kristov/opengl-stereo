@@ -10,45 +10,6 @@ int rotate_delay = 30;
 double screenwidth = 1024;
 double screenheight = 600;
 
-static const GLfloat g_vertex_buffer_data[] = {
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f
-};
-
 /*
 Eye separation is typically kept at 1/30th of the convergence distance and objects
 closer than half the convergence distance are avoided in the scene.

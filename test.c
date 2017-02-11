@@ -33,7 +33,110 @@ double screenZ = 10.0;                                     //screen projection p
 double IOD = 0.5;                                          //intraocular distance
 double theta = 0;
 
-GLuint cube;
+static struct {
+    GLuint cubeData;
+    GLuint vertex_shader;
+    GLuint fragment_shader;
+    GLuint program;
+    GLuint barrel_power_addr;
+} g_resources;
+
+GLchar *file_contents(const char *filename, GLint *length) {
+    char *buffer = 0;
+    FILE *f = fopen(filename, "rb");
+
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        *length = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        buffer = malloc(*length);
+        if (buffer) {
+            fread(buffer, 1, *length, f);
+        }
+        fclose (f);
+    }
+
+    if (buffer) {
+        return buffer;
+    }
+
+    return NULL;
+}
+
+static void show_info_log( GLuint object, PFNGLGETSHADERIVPROC glGet__iv, PFNGLGETSHADERINFOLOGPROC glGet__InfoLog ) {
+    GLint log_length;
+    char *log;
+
+    glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length);
+    log = malloc(log_length);
+    glGet__InfoLog(object, log_length, NULL, log);
+    fprintf(stderr, "%s", log);
+    free(log);
+}
+
+static GLuint make_shader(GLenum type, const char *filename) {
+    GLint length;
+    GLchar *source = file_contents(filename, &length);
+    GLuint shader;
+    GLint shader_ok;
+
+    if (!source) {
+        fprintf(stderr, "Failed to load file %s\n", filename);
+        return 0;
+    }
+
+    shader = glCreateShader(type);
+    glShaderSource(shader, 1, (const GLchar**)&source, &length);
+    free(source);
+    glCompileShader(shader);
+
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_ok);
+    if (!shader_ok) {
+        fprintf(stderr, "Failed to compile %s:\n", filename);
+        show_info_log(shader, glGetShaderiv, glGetShaderInfoLog);
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
+
+static GLuint make_program(GLuint vertex_shader, GLuint fragment_shader) {
+    GLint program_ok;
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &program_ok);
+    if (!program_ok) {
+        fprintf(stderr, "Failed to link shader program:\n");
+        show_info_log(program, glGetProgramiv, glGetProgramInfoLog);
+        glDeleteProgram(program);
+        return 0;
+    }
+    return program;
+}
+
+static int make_resources(void) {
+    g_resources.vertex_shader = make_shader(GL_VERTEX_SHADER, "vert.glsl");
+    if (g_resources.vertex_shader == 0)
+        return 0;
+
+    g_resources.fragment_shader = make_shader(GL_FRAGMENT_SHADER, "frag.glsl");
+    if (g_resources.fragment_shader == 0)
+        return 0;
+
+    g_resources.program = make_program(g_resources.vertex_shader, g_resources.fragment_shader);
+    if (g_resources.program == 0)
+        return 0;
+
+    g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program, "barrel_power");
+
+    glUseProgram(g_resources.program);
+
+    glUniform1f(g_resources.barrel_power_addr, 0.6f);
+    return 1;
+}
 
 void drawFloor() {
     int gridSizeX = 10;
@@ -42,8 +145,8 @@ void drawFloor() {
     int y = 0;
     float depth = -3.0f;
  
-    unsigned int SizeX = 8;
-    unsigned int SizeY = 8;
+    unsigned int SizeX = 1;
+    unsigned int SizeY = 1;
 
     glBegin(GL_QUADS);
     for (x = 0; x < gridSizeX; ++x) {
@@ -63,26 +166,31 @@ void drawFloor() {
 }
 
 void drawscene() {
-    drawFloor();
+    glPushMatrix();
+    {
+        glTranslatef(-2.0, 0.0, -2.0);
+        drawFloor();
+    }
+    glPopMatrix();
     glPushMatrix();
     {
         glRotatef(theta,1.0,0.0,1.0);
-        glCallList(cube);
+        glCallList(g_resources.cubeData);
     }
     glPopMatrix();
     glPushMatrix();
     {
         glTranslatef(1.0, 0.0, -2.0);
         glRotatef(theta+10,1.0,0.0,1.0);
-        glCallList(cube);
+        glCallList(g_resources.cubeData);
     }
     glPopMatrix();
     glEnd();
 }
 
 void storeCube() {
-    cube = glGenLists(1);
-    glNewList(cube, GL_COMPILE);
+    g_resources.cubeData = glGenLists(1);
+    glNewList(g_resources.cubeData, GL_COMPILE);
 
     glBegin(GL_POLYGON);
     glColor3f(   1.0,  1.0, 1.0 );
@@ -149,7 +257,7 @@ void setFrustum(void) {
 }
 
 void initGL(void) {
-    //glViewport(0, 0, screenwidth, screenheight);            //sets drawing viewport
+    //glClearColor(1.0f,0.0f,0.0f,0.0f);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);
@@ -226,6 +334,7 @@ void init(int *argc, char **argv) {
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutTimerFunc(rotate_delay, rotate, 0);
+    make_resources();
     initGL();
     storeCube();
 }

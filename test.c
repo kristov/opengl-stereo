@@ -6,6 +6,8 @@
 #define DTR 0.0174532925
 #include <unistd.h>
 
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
 int rotate_delay = 30;
 double screenwidth = 1024;
 double screenheight = 600;
@@ -35,11 +37,45 @@ double theta = 0;
 
 static struct {
     GLuint cubeData;
+    GLuint indexBufferID;
     GLuint vertex_shader;
     GLuint fragment_shader;
     GLuint program;
     GLuint barrel_power_addr;
 } g_resources;
+int numVerticies = 8;
+int numIndicies = 36; // 3 verticies per triangle, 6 verticies per side, 6 sides
+
+GLfloat verts[] = {
+    0.5f, -0.5f, 0.5f,
+    0.5f, 0.5f, 0.5f,
+    -0.5f, 0.5f, 0.5f,
+    -0.5f, -0.5f, 0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, 0.5f, -0.5f,
+    -0.5f, 0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f
+};
+
+GLfloat colors[] = {
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f
+};
+
+GLuint indicies[] = {
+    0, 1, 2, 0, 2, 3, // front
+    4, 5, 6, 4, 6, 7, // back
+    4, 5, 1, 4, 1, 0, // right
+    7, 6, 2, 7, 2, 3, // left
+    1, 2, 6, 1, 6, 5, // top
+    0, 4, 7, 0, 7, 3, // bottom
+};
 
 GLchar *file_contents(const char *filename, GLint *length) {
     char *buffer = 0;
@@ -117,7 +153,7 @@ static GLuint make_program(GLuint vertex_shader, GLuint fragment_shader) {
     return program;
 }
 
-static int make_resources(void) {
+static int makeResources(void) {
     g_resources.vertex_shader = make_shader(GL_VERTEX_SHADER, "vert.glsl");
     if (g_resources.vertex_shader == 0)
         return 0;
@@ -166,76 +202,57 @@ void drawFloor() {
 }
 
 void drawscene() {
-    glPushMatrix();
-    {
-        glTranslatef(-2.0, 0.0, -2.0);
-        drawFloor();
-    }
-    glPopMatrix();
+    //glPushMatrix();
+    //{
+    //    glTranslatef(-2.0, 0.0, -2.0);
+    //    drawFloor();
+    //}
+    //glPopMatrix();
     glPushMatrix();
     {
         glRotatef(theta,1.0,0.0,1.0);
-        glCallList(g_resources.cubeData);
+        glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
+        //glCallList(g_resources.cubeData);
     }
     glPopMatrix();
     glPushMatrix();
     {
         glTranslatef(1.0, 0.0, -2.0);
         glRotatef(theta+10,1.0,0.0,1.0);
-        glCallList(g_resources.cubeData);
+        glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
+        //glCallList(g_resources.cubeData);
     }
     glPopMatrix();
-    glEnd();
+    //glEnd();
 }
 
 void storeCube() {
-    g_resources.cubeData = glGenLists(1);
-    glNewList(g_resources.cubeData, GL_COMPILE);
+    GLuint vertexIndexBuffer;
+    GLuint vertexArrayObject;
+    GLuint vertexDataBuffer;
+    GLuint glVertexB;
+    GLuint glColorB;
 
-    glBegin(GL_POLYGON);
-    glColor3f(   1.0,  1.0, 1.0 );
-    glVertex3f(  0.5, -0.5, 0.5 );
-    glVertex3f(  0.5,  0.5, 0.5 );
-    glVertex3f( -0.5,  0.5, 0.5 );
-    glVertex3f( -0.5, -0.5, 0.5 );
-    glEnd();
-     
-    // Purple side - RIGHT
-    glBegin(GL_POLYGON);
-    glColor3f(  1.0,  0.0,  1.0 );
-    glVertex3f( 0.5, -0.5, -0.5 );
-    glVertex3f( 0.5,  0.5, -0.5 );
-    glVertex3f( 0.5,  0.5,  0.5 );
-    glVertex3f( 0.5, -0.5,  0.5 );
-    glEnd();
-     
-    // Green side - LEFT
-    glBegin(GL_POLYGON);
-    glColor3f(   0.0,  1.0,  0.0 );
-    glVertex3f( -0.5, -0.5,  0.5 );
-    glVertex3f( -0.5,  0.5,  0.5 );
-    glVertex3f( -0.5,  0.5, -0.5 );
-    glVertex3f( -0.5, -0.5, -0.5 );
-    glEnd();
-     
-    // Blue side - TOP
-    glBegin(GL_POLYGON);
-    glColor3f(   0.0,  0.0,  1.0 );
-    glVertex3f(  0.5,  0.5,  0.5 );
-    glVertex3f(  0.5,  0.5, -0.5 );
-    glVertex3f( -0.5,  0.5, -0.5 );
-    glVertex3f( -0.5,  0.5,  0.5 );
-    glEnd();
-     
-    // Red side - BOTTOM
-    glBegin(GL_POLYGON);
-    glColor3f(   1.0,  0.0,  0.0 );
-    glVertex3f(  0.5, -0.5, -0.5 );
-    glVertex3f(  0.5, -0.5,  0.5 );
-    glVertex3f( -0.5, -0.5,  0.5 );
-    glVertex3f( -0.5, -0.5, -0.5 );
-    glEnd();
-    glEndList();
+    glGenVertexArrays(1, &vertexArrayObject);
+    glBindVertexArray(vertexArrayObject);
+
+    glGenBuffers(1, &vertexDataBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexDataBuffer);
+    glBufferData(GL_ARRAY_BUFFER, numVerticies * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, numVerticies * 3 * sizeof(GLfloat), verts);
+    glBufferSubData(GL_ARRAY_BUFFER, numVerticies * 3 * sizeof(GLfloat), numVerticies * 4 * sizeof(GLfloat), colors);
+
+    glVertexB = glGetAttribLocation(g_resources.program, "glVertexB" );
+    glVertexAttribPointer(glVertexB, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(glVertexB);
+
+    glColorB = glGetAttribLocation(g_resources.program, "glColorB" );
+    glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(numVerticies * 3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(glColorB);
+
+    glGenBuffers(1, &vertexIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndicies * sizeof(GLuint), indicies, GL_STATIC_DRAW);
 }
 
 void setFrustum(void) {
@@ -334,7 +351,7 @@ void init(int *argc, char **argv) {
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutTimerFunc(rotate_delay, rotate, 0);
-    make_resources();
+    makeResources();
     initGL();
     storeCube();
 }

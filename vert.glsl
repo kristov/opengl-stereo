@@ -1,5 +1,7 @@
 #version 120
 uniform float barrel_power;
+attribute vec3 glVertexB;
+attribute vec4 glColorB;
 
 vec4 Distort(vec4 p)
 {
@@ -23,7 +25,7 @@ vec4 Distort(vec4 p)
 
 void main()
 {
-    gl_FrontColor = gl_Color;
-    vec4 P = gl_ModelViewProjectionMatrix * gl_Vertex;
+    gl_FrontColor = glColorB;
+    vec4 P = gl_ModelViewProjectionMatrix * vec4(glVertexB, 1);
     gl_Position = Distort(P);
 }

@@ -8,6 +8,15 @@
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+enum planeType {
+    F_TOP,
+    F_BOTTOM,
+    F_LEFT,
+    F_RIGHT,
+    F_FRONT,
+    F_BACK
+};
+
 int rotate_delay = 30;
 double screenwidth = 1024;
 double screenheight = 600;
@@ -36,46 +45,23 @@ double IOD = 0.5;                                          //intraocular distanc
 double theta = 0;
 
 static struct {
-    GLuint cubeData;
-    GLuint indexBufferID;
     GLuint vertex_shader;
     GLuint fragment_shader;
     GLuint program;
     GLuint barrel_power_addr;
 } g_resources;
-int numVerticies = 8;
-int numIndicies = 36; // 3 verticies per triangle, 6 verticies per side, 6 sides
 
-GLfloat verts[] = {
-    0.5f, -0.5f, 0.5f,
-    0.5f, 0.5f, 0.5f,
-    -0.5f, 0.5f, 0.5f,
-    -0.5f, -0.5f, 0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f, 0.5f, -0.5f,
-    -0.5f, 0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f
-};
+typedef struct {
+    GLuint vertexArrayObject;
+    int numVerticies;
+    int numIndicies;
+    GLfloat* verts;
+    GLuint* indicies;
+    GLfloat* colors;
+} object3d;
 
-GLfloat colors[] = {
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 1.0f
-};
-
-GLuint indicies[] = {
-    0, 1, 2, 0, 2, 3, // front
-    4, 5, 6, 4, 6, 7, // back
-    4, 5, 1, 4, 1, 0, // right
-    7, 6, 2, 7, 2, 3, // left
-    1, 2, 6, 1, 6, 5, // top
-    0, 4, 7, 0, 7, 3, // bottom
-};
+static object3d* objects[10];
+int numObjects = 0;
 
 GLchar *file_contents(const char *filename, GLint *length) {
     char *buffer = 0;
@@ -202,57 +188,136 @@ void drawFloor() {
 }
 
 void drawscene() {
+    int objID = 0;
+    for (objID = 0; objID < numObjects; objID++) {
+        object3d* obj = objects[objID];
+        glPushMatrix();
+        {
+            glRotatef(theta,1.0,0.0,1.0);
+            glDrawElements(GL_TRIANGLES, obj->numIndicies, GL_UNSIGNED_INT, NULL);
+        }
+        glPopMatrix();
+    }
     //glPushMatrix();
     //{
     //    glTranslatef(-2.0, 0.0, -2.0);
     //    drawFloor();
     //}
     //glPopMatrix();
-    glPushMatrix();
-    {
-        glRotatef(theta,1.0,0.0,1.0);
-        glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
-        //glCallList(g_resources.cubeData);
-    }
-    glPopMatrix();
-    glPushMatrix();
-    {
-        glTranslatef(1.0, 0.0, -2.0);
-        glRotatef(theta+10,1.0,0.0,1.0);
-        glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
-        //glCallList(g_resources.cubeData);
-    }
-    glPopMatrix();
+    //glPushMatrix();
+    //{
+    //    glTranslatef(1.0, 0.0, -2.0);
+        //glRotatef(theta+10,1.0,0.0,1.0);
+    //    glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
+    //}
+    //glPopMatrix();
     //glEnd();
+}
+
+void generatePlane(int xSize, int ySize, int z, enum planeType pt) {
+    int i, ti, vi;
+    int x, y;
+    GLfloat xf, yf, zf;
+    GLfloat r, g, b;
+    int nrVertFloats;
+    int nrColorFloats;
+    int XM = 0;
+    int YM = 1;
+    int ZM = 2;
+
+    switch (pt) {
+        case F_TOP:
+            break;
+        case F_BOTTOM:
+            break;
+        case F_LEFT:
+            break;
+        case F_RIGHT:
+            break;
+        case F_FRONT:
+            break;
+        case F_BACK:
+            break;
+        default:
+            return;
+    }
+    object3d* obj = malloc(sizeof(object3d));
+
+    obj->numVerticies = ((xSize + 1) * (ySize + 1));
+    nrVertFloats = 3 * obj->numVerticies;
+    obj->verts = malloc(sizeof(GLfloat) * nrVertFloats);
+
+    for (i = 0, y = 0; y <= ySize; y++) {
+        for (x = 0; x <= xSize; x++, i += 3) {
+            xf = (GLfloat)x / 10;
+            yf = (GLfloat)y / 10;
+            zf = 0.0f;
+            //zf = (GLfloat)z / 10;
+            obj->verts[i+XM] = xf;
+            obj->verts[i+YM] = yf;
+            obj->verts[i+ZM] = zf;
+        }
+    }
+
+    obj->numIndicies = xSize * ySize * 6;
+    obj->indicies = malloc(sizeof(GLuint) * obj->numIndicies);
+
+    for (ti = 0, vi = 0, y = 0; y < ySize; y++, vi++) {
+        for (x = 0; x < xSize; x++, ti += 6, vi++) {
+            obj->indicies[ti] = vi;
+            obj->indicies[ti + 3] = obj->indicies[ti + 2] = vi + 1;
+            obj->indicies[ti + 4] = obj->indicies[ti + 1] = vi + xSize + 1;
+            obj->indicies[ti + 5] = vi + xSize + 2;
+        }
+    }
+
+    nrColorFloats = 4 * obj->numVerticies;
+    obj->colors = malloc(sizeof(GLfloat) * nrColorFloats);
+    for (i = 0; i < nrColorFloats; i += 4) {
+        obj->colors[i] = 0.0f;
+        obj->colors[i+1] = 1.0f;
+        obj->colors[i+2] = 0.0f;
+        obj->colors[i+3] = 1.0f;
+    }
+
+    objects[numObjects] = obj;
+    numObjects++;
+}
+
+void generateCube(int xSize, int ySize) {
+    generatePlane(xSize, ySize, 5, F_FRONT);
 }
 
 void storeCube() {
     GLuint vertexIndexBuffer;
-    GLuint vertexArrayObject;
     GLuint vertexDataBuffer;
     GLuint glVertexB;
     GLuint glColorB;
 
-    glGenVertexArrays(1, &vertexArrayObject);
-    glBindVertexArray(vertexArrayObject);
+    generateCube(10, 10);
+
+    object3d* obj = objects[0];
+
+    glGenVertexArrays(1, &obj->vertexArrayObject);
+    glBindVertexArray(obj->vertexArrayObject);
 
     glGenBuffers(1, &vertexDataBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexDataBuffer);
-    glBufferData(GL_ARRAY_BUFFER, numVerticies * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, numVerticies * 3 * sizeof(GLfloat), verts);
-    glBufferSubData(GL_ARRAY_BUFFER, numVerticies * 3 * sizeof(GLfloat), numVerticies * 4 * sizeof(GLfloat), colors);
+    glBufferData(GL_ARRAY_BUFFER, obj->numVerticies * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, obj->numVerticies * 3 * sizeof(GLfloat), obj->verts);
+    glBufferSubData(GL_ARRAY_BUFFER, obj->numVerticies * 3 * sizeof(GLfloat), obj->numVerticies * 4 * sizeof(GLfloat), obj->colors);
 
     glVertexB = glGetAttribLocation(g_resources.program, "glVertexB" );
     glVertexAttribPointer(glVertexB, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(glVertexB);
 
     glColorB = glGetAttribLocation(g_resources.program, "glColorB" );
-    glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(numVerticies * 3 * sizeof(GLfloat)));
+    glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(obj->numVerticies * 3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(glColorB);
 
     glGenBuffers(1, &vertexIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndicies * sizeof(GLuint), indicies, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->numIndicies * sizeof(GLuint), obj->indicies, GL_STATIC_DRAW);
 }
 
 void setFrustum(void) {
@@ -274,7 +339,7 @@ void setFrustum(void) {
 }
 
 void initGL(void) {
-    //glClearColor(1.0f,0.0f,0.0f,0.0f);
+    glClearColor(0.0f,0.0f,1.0f,0.0f);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);

@@ -10,8 +10,7 @@
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 int rotate_delay = 30;
-double screenwidth = 1024;
-double screenheight = 600;
+double theta = 0;
 
 /*
 Eye separation is typically kept at 1/30th of the convergence distance and objects
@@ -26,20 +25,25 @@ struct camera {
     GLfloat modeltranslation;
 } leftCam, rightCam;
 
-float depthZ = -10.0;                                      //depth of the object drawing
-
-double fovy = 45;                                          //field of view in y-axis
-double aspect = 0;
-double nearZ = 3.0;                                        //near clipping plane
-double farZ = 30.0;                                        //far clipping plane
-double screenZ = 10.0;                                     //screen projection plane
-double IOD = 0.5;                                          //intraocular distance
-double theta = 0;
+struct screeninf {
+    double screenwidth;
+    double screenheight;
+    float depthZ;
+    double fovy;
+    double aspect;
+    double nearZ;
+    double farZ;
+    double screenZ;
+    double IOD;
+} screenInfo;
 
 static struct {
-    GLuint vertex_shader;
-    GLuint fragment_shader;
-    GLuint program;
+    GLuint vertex_shader_buffer;
+    GLuint fragment_shader_buffer;
+    GLuint program_buffer;
+    GLuint vertex_shader_eye;
+    GLuint fragment_shader_eye;
+    GLuint program_eye;
     GLuint barrel_power_addr;
 } g_resources;
 
@@ -123,21 +127,21 @@ static GLuint make_program(GLuint vertex_shader, GLuint fragment_shader) {
 }
 
 static int makeResources(void) {
-    g_resources.vertex_shader = make_shader(GL_VERTEX_SHADER, "vert.glsl");
-    if (g_resources.vertex_shader == 0)
+    g_resources.vertex_shader_buffer = make_shader(GL_VERTEX_SHADER, "vert_buffer.glsl");
+    if (g_resources.vertex_shader_buffer == 0)
         return 0;
 
-    g_resources.fragment_shader = make_shader(GL_FRAGMENT_SHADER, "frag.glsl");
-    if (g_resources.fragment_shader == 0)
+    g_resources.fragment_shader_buffer = make_shader(GL_FRAGMENT_SHADER, "frag_buffer.glsl");
+    if (g_resources.fragment_shader_buffer == 0)
         return 0;
 
-    g_resources.program = make_program(g_resources.vertex_shader, g_resources.fragment_shader);
-    if (g_resources.program == 0)
+    g_resources.program_buffer = make_program(g_resources.vertex_shader_buffer, g_resources.fragment_shader_buffer);
+    if (g_resources.program_buffer == 0)
         return 0;
 
-    g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program, "barrel_power");
+    g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program_buffer, "barrel_power");
 
-    glUseProgram(g_resources.program);
+    glUseProgram(g_resources.program_buffer);
 
     glUniform1f(g_resources.barrel_power_addr, 0.6f);
     return 1;
@@ -174,7 +178,6 @@ void drawscene() {
     int objID = 0;
     for (objID = 0; objID < numObjects; objID++) {
         object3d* obj = objects[objID];
-        //printf("numIndicies: %d\n", obj->numIndicies);
         glPushMatrix();
         {
             glRotatef(theta,1.0,1.0,1.0);
@@ -182,20 +185,6 @@ void drawscene() {
         }
         glPopMatrix();
     }
-    //glPushMatrix();
-    //{
-    //    glTranslatef(-2.0, 0.0, -2.0);
-    //    drawFloor();
-    //}
-    //glPopMatrix();
-    //glPushMatrix();
-    //{
-    //    glTranslatef(1.0, 0.0, -2.0);
-        //glRotatef(theta+10,1.0,0.0,1.0);
-    //    glDrawElements(GL_TRIANGLES, numIndicies, GL_UNSIGNED_INT, NULL);
-    //}
-    //glPopMatrix();
-    //glEnd();
 }
 
 void storeCube() {
@@ -218,11 +207,11 @@ void storeCube() {
     glBufferSubData(GL_ARRAY_BUFFER, 0, obj->numVerticies * 3 * sizeof(GLfloat), obj->verts);
     glBufferSubData(GL_ARRAY_BUFFER, obj->numVerticies * 3 * sizeof(GLfloat), obj->numVerticies * 4 * sizeof(GLfloat), obj->colors);
 
-    glVertexB = glGetAttribLocation(g_resources.program, "glVertexB" );
+    glVertexB = glGetAttribLocation(g_resources.program_buffer, "glVertexB" );
     glVertexAttribPointer(glVertexB, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(glVertexB);
 
-    glColorB = glGetAttribLocation(g_resources.program, "glColorB" );
+    glColorB = glGetAttribLocation(g_resources.program_buffer, "glColorB" );
     glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(obj->numVerticies * 3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(glColorB);
 
@@ -231,22 +220,51 @@ void storeCube() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->numIndicies * sizeof(GLuint), obj->indicies, GL_STATIC_DRAW);
 }
 
+void createRenderTexture() {
+    GLuint frameBufferName = 0;
+    glGenFramebuffers(1, &frameBufferName);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBufferName);
+
+    GLuint renderedTextureLeft;
+    glGenTextures(1, &renderedTextureLeft);
+    glBindTexture(GL_TEXTURE_2D, renderedTextureLeft);
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 512, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    GLuint depthRenderBuffer;
+    glGenRenderbuffers(1, &depthRenderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 600);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBuffer);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTextureLeft, 0);
+    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBufferName);
+    glViewport(0, 0, 512, 600); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+}
+
 void setFrustum(void) {
-    double top = nearZ*tan(DTR*fovy/2);                    //sets top of frustum based on fovy and near clipping plane
-    double right = aspect*top;                             //sets right of frustum based on aspect ratio
-    double frustumshift = (IOD/2)*nearZ/screenZ;
+    // sets top of frustum based on fovy and near clipping plane
+    double top = screenInfo.nearZ * tan(DTR * screenInfo.fovy / 2);
+
+    // sets right of frustum based on aspect ratio
+    double right = screenInfo.aspect * top;
+    double frustumshift = (screenInfo.IOD / 2) * screenInfo.nearZ / screenInfo.screenZ;
 
     leftCam.topfrustum = top;
     leftCam.bottomfrustum = -top;
     leftCam.leftfrustum = -right + frustumshift;
     leftCam.rightfrustum = right + frustumshift;
-    leftCam.modeltranslation = IOD/2;
+    leftCam.modeltranslation = screenInfo.IOD / 2;
 
     rightCam.topfrustum = top;
     rightCam.bottomfrustum = -top;
     rightCam.leftfrustum = -right - frustumshift;
     rightCam.rightfrustum = right - frustumshift;
-    rightCam.modeltranslation = -IOD/2;
+    rightCam.modeltranslation = -screenInfo.IOD / 2;
 }
 
 void initGL(void) {
@@ -267,9 +285,9 @@ GLvoid reshape(int w, int h) {
     if (h==0) {
         h=1;                                               //prevent divide by 0
     }
-    screenwidth = w;
-    screenheight = h;
-    aspect = ( (double)w / 2 ) / (double)h;
+    screenInfo.screenwidth = w;
+    screenInfo.screenheight = h;
+    screenInfo.aspect = ( (double)w / 2 ) / (double)h;
     //glViewport(0, 0, w, h);
     setFrustum();
 }
@@ -281,16 +299,16 @@ GLvoid display(GLvoid) {
     glDrawBuffer(GL_BACK_LEFT);                              //draw into back left buffer
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();                                        //reset projection matrix
-    glViewport(0,0,screenwidth/2,screenheight);
+    glViewport(0, 0, screenInfo.screenwidth / 2, screenInfo.screenheight);
     glFrustum(leftCam.leftfrustum, leftCam.rightfrustum,     //set left view frustum
               leftCam.bottomfrustum, leftCam.topfrustum,
-              nearZ, farZ);
+              screenInfo.nearZ, screenInfo.farZ);
     glTranslatef(leftCam.modeltranslation, 0.0, 0.0);        //translate to cancel parallax
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glPushMatrix();
     {
-        glTranslatef(0.0, 0.0, depthZ);                        //translate to screenplane
+        glTranslatef(0.0, 0.0, screenInfo.depthZ);           //translate to screenplane
         drawscene();
     }
     glPopMatrix();
@@ -298,17 +316,17 @@ GLvoid display(GLvoid) {
     glDrawBuffer(GL_BACK_RIGHT);                             //draw into back right buffer
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();                                        //reset projection matrix
-    glViewport(screenwidth/2,0,screenwidth/2,screenheight);
+    glViewport(screenInfo.screenwidth / 2, 0, screenInfo.screenwidth / 2, screenInfo.screenheight);
     glFrustum(rightCam.leftfrustum, rightCam.rightfrustum,   //set left view frustum
               rightCam.bottomfrustum, rightCam.topfrustum,
-              nearZ, farZ);
+              screenInfo.nearZ, screenInfo.farZ);
     glTranslatef(rightCam.modeltranslation, 0.0, 0.0);       //translate to cancel parallax
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     glPushMatrix();
     {
-        glTranslatef(0.0, 0.0, depthZ);                        //translate to screenplane
+        glTranslatef(0.0, 0.0, screenInfo.depthZ);           //translate to screenplane
         drawscene();
     }
     glPopMatrix();
@@ -316,10 +334,23 @@ GLvoid display(GLvoid) {
     glutSwapBuffers();
 }
 
+void initScreenInfo() {
+    screenInfo.screenwidth = 1024;
+    screenInfo.screenheight = 600;
+    screenInfo.depthZ = -10.0;       // depth of the object drawing
+    screenInfo.fovy = 45;            // field of view in y-axis
+    screenInfo.aspect = 0;
+    screenInfo.nearZ = 3.0;          // near clipping plane
+    screenInfo.farZ = 30.0;          // far clipping plane
+    screenInfo.screenZ = 10.0;       // screen projection plane
+    screenInfo.IOD = 0.5;            // intraocular distance
+}
+
 void init(int *argc, char **argv) {
+    initScreenInfo();
     glutInit(argc, argv);
-    aspect = (double)screenwidth / (double)screenheight;
-    glutInitWindowSize(screenwidth, screenheight);
+    screenInfo.aspect = screenInfo.screenwidth / screenInfo.screenheight;
+    glutInitWindowSize(screenInfo.screenwidth, screenInfo.screenheight);
     glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
     glutCreateWindow("Stereo Test");
     glEnable(GL_DEPTH_TEST);

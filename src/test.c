@@ -159,33 +159,6 @@ static int makeResources(void) {
     return 1;
 }
 
-void drawFloor() {
-    int gridSizeX = 10;
-    int gridSizeY = 10;
-    int x = 0;
-    int y = 0;
-    float depth = -3.0f;
- 
-    unsigned int SizeX = 1;
-    unsigned int SizeY = 1;
-
-    glBegin(GL_QUADS);
-    for (x = 0; x < gridSizeX; ++x) {
-        for (y = 0; y < gridSizeY; ++y) {
-            if ((x+y) & 0x00000001)
-                glColor3f(1.0f,1.0f,1.0f);
-            else
-                glColor3f(0.0f,0.0f,0.0f);
-            glVertex3f(    x*SizeX,depth,    y*SizeY);
-            glVertex3f((x+1)*SizeX,depth,    y*SizeY);
-            glVertex3f((x+1)*SizeX,depth,(y+1)*SizeY);
-            glVertex3f(    x*SizeX,depth,(y+1)*SizeY);
- 
-        }
-    }
-    glEnd();
-}
-
 void drawscene() {
     int objID = 0;
     for (objID = 0; objID < numObjects; objID++) {

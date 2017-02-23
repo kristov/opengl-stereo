@@ -41,9 +41,9 @@ static struct {
     GLuint vertex_shader_buffer;
     GLuint fragment_shader_buffer;
     GLuint program_buffer;
-    GLuint vertex_shader_eye;
-    GLuint fragment_shader_eye;
-    GLuint program_eye;
+    GLuint vertex_shader_screen;
+    GLuint fragment_shader_screen;
+    GLuint program_screen;
     GLuint barrel_power_addr;
 } g_resources;
 
@@ -139,11 +139,23 @@ static int makeResources(void) {
     if (g_resources.program_buffer == 0)
         return 0;
 
-    g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program_buffer, "barrel_power");
+    g_resources.vertex_shader_screen = make_shader(GL_VERTEX_SHADER, "vert_screen.glsl");
+    if (g_resources.vertex_shader_screen == 0)
+        return 0;
+
+    g_resources.fragment_shader_screen = make_shader(GL_FRAGMENT_SHADER, "frag_screen.glsl");
+    if (g_resources.fragment_shader_screen == 0)
+        return 0;
+
+    g_resources.program_screen = make_program(g_resources.vertex_shader_screen, g_resources.fragment_shader_screen);
+    if (g_resources.program_screen == 0)
+        return 0;
+
+    //g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program_screen, "barrel_power");
 
     glUseProgram(g_resources.program_buffer);
 
-    glUniform1f(g_resources.barrel_power_addr, 0.6f);
+    //glUniform1f(g_resources.barrel_power_addr, 0.6f);
     return 1;
 }
 

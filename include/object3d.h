@@ -19,6 +19,4 @@ typedef struct {
 } object3d;
 
 void generatePlane(int xSize, int ySize, int z, object3d* obj, enum planeType pt, int vert_off, int ind_off, int col_off);
-
-object3d* generateCube(int xSize, int ySize, int zSize);
-
+object3d* cube(GLfloat x, GLfloat y, GLfloat z);

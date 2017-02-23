@@ -72,100 +72,351 @@ void generatePlane(int uSize, int vSize, int z, object3d* obj, enum planeType pt
     }
 }
 
-object3d* generateCube(int xSize, int ySize, int zSize) {
-    int nvt_front_back, nvt_left_right, nvt_top_bottom;
-    int nin_front_back, nin_left_right, nin_top_bottom;
-    int vert_off = 0, ind_off = 0, col_off = 0;
+object3d* cube(GLfloat x, GLfloat y, GLfloat z) {
     int nrVertFloats, nrColorFloats;
+    GLfloat* verts;
+    GLuint* indicies;
+    GLfloat* colors;
+    int ioff, voff, coff;
+    GLfloat rf, gf, bf, rl, gl, bl, rr, gr, br, rt, gt, bt, rb, gb, bb, rk, gk, bk;
 
     object3d* obj = malloc(sizeof(object3d));
 
-    nvt_front_back = (xSize + 1) * (ySize + 1);
-    nvt_left_right = (zSize + 1) * (ySize + 1);
-    nvt_top_bottom = (xSize + 1) * (zSize + 1);
-
-    nin_front_back = xSize * ySize * 6;
-    nin_left_right = zSize * ySize * 6;
-    nin_top_bottom = xSize * zSize * 6;
-
-    obj->numVerticies = (nvt_front_back * 2) + (nvt_left_right * 2) + (nvt_top_bottom * 2);
+    obj->numVerticies = 4 * 6;
     nrVertFloats = 3 * obj->numVerticies;
-    obj->verts = malloc(sizeof(GLfloat) * nrVertFloats);
+    verts = malloc(sizeof(GLfloat) * nrVertFloats);
 
-    obj->numIndicies = (nin_front_back * 2) + (nin_left_right * 2) + (nin_top_bottom * 2);
-    obj->indicies = malloc(sizeof(GLuint) * obj->numIndicies);
+    obj->numIndicies = 6 * 6;
+    indicies = malloc(sizeof(GLuint) * obj->numIndicies);
 
     nrColorFloats = 4 * obj->numVerticies;
-    obj->colors = malloc(sizeof(GLfloat) * nrColorFloats);
+    colors = malloc(sizeof(GLfloat) * nrColorFloats);
 
-    printf("nr verts    == %d\n", obj->numVerticies);
-    printf("nr vert fl  == %d\n", nrVertFloats);
-    printf("nr indicies == %d\n", obj->numIndicies);
-    printf("nr colors   == %d\n", nrColorFloats);
+    rf = 1.0f;
+    gf = 0.0f;
+    bf = 0.0f;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    rl = 0.0f;
+    gl = 1.0f;
+    bl = 0.0f;
 
-    generatePlane(xSize, ySize, 5, obj, F_FRONT_BACK, vert_off, ind_off, col_off);
+    rr = 0.0f;
+    gr = 0.0f;
+    br = 1.0f;
 
-    vert_off += nvt_front_back * 3;
-    ind_off += nin_front_back;
-    col_off += nvt_front_back * 4;
+    rt = 1.0f;
+    gt = 0.0f;
+    bt = 1.0f;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    rb = 1.0f;
+    gb = 1.0f;
+    bb = 0.0f;
 
-    generatePlane(xSize, ySize, -5, obj, F_FRONT_BACK, vert_off, ind_off, col_off);
+    rk = 0.5f;
+    gk = 0.5f;
+    bk = 0.5f;
 
-    vert_off += nvt_front_back * 3;
-    ind_off += nin_front_back;
-    col_off += nvt_front_back * 4;
+    ioff = 0;
+    voff = 0;
+    coff = 0;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    // front
+    verts[voff + 0] = 0.0f; // 0
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 1
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 2
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 3
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
 
-    generatePlane(zSize, ySize, 5, obj, F_LEFT_RIGHT, vert_off, ind_off, col_off);
+    // left
+    verts[voff + 0] = 0.0f; // 4
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 5
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 6
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 7
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
 
-    vert_off += nvt_left_right * 3;
-    ind_off += nin_left_right;
-    col_off += nvt_left_right * 4;
+    // right
+    verts[voff + 0] = x; // 8
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 9
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 10
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 11
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    // top
+    verts[voff + 0] = x; // 12
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 13
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 14
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 15
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
 
-    generatePlane(zSize, ySize, -5, obj, F_LEFT_RIGHT, vert_off, ind_off, col_off);
+    // bottom
+    verts[voff + 0] = 0.0f; // 16
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 17
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 18
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 19
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
 
-    vert_off += nvt_left_right * 3;
-    ind_off += nin_left_right;
-    col_off += nvt_left_right * 4;
+    // back
+    verts[voff + 0] = 0.0f; // 20
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 21
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 22
+    verts[voff + 1] = y;
+    verts[voff + 2] = z;
+    voff += 3;
+    verts[voff + 0] = x; // 23
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = z;
+    voff += 3;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    // front
+    colors[coff + 0] = rf; // 0
+    colors[coff + 1] = gf;
+    colors[coff + 2] = bf;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rf; // 1
+    colors[coff + 1] = gf;
+    colors[coff + 2] = bf;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rf; // 2
+    colors[coff + 1] = gf;
+    colors[coff + 2] = bf;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rf; // 3
+    colors[coff + 1] = gf;
+    colors[coff + 2] = bf;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    generatePlane(xSize, zSize, 5, obj, F_TOP_BOTTOM, vert_off, ind_off, col_off);
+    // left
+    colors[coff + 0] = rl; // 4
+    colors[coff + 1] = gl;
+    colors[coff + 2] = bl;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rl; // 5
+    colors[coff + 1] = gl;
+    colors[coff + 2] = bl;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rl; // 6
+    colors[coff + 1] = gl;
+    colors[coff + 2] = bl;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rl; // 7
+    colors[coff + 1] = gl;
+    colors[coff + 2] = bl;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    vert_off += nvt_top_bottom * 3;
-    ind_off += nin_top_bottom;
-    col_off += nvt_top_bottom * 4;
+    // right
+    colors[coff + 0] = rr; // 8
+    colors[coff + 1] = gr;
+    colors[coff + 2] = br;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rr; // 9
+    colors[coff + 1] = gr;
+    colors[coff + 2] = br;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rr; // 10
+    colors[coff + 1] = gr;
+    colors[coff + 2] = br;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rr; // 11
+    colors[coff + 1] = gr;
+    colors[coff + 2] = br;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    // top
+    colors[coff + 0] = rt; // 12
+    colors[coff + 1] = gt;
+    colors[coff + 2] = bt;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rt; // 13
+    colors[coff + 1] = gt;
+    colors[coff + 2] = bt;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rt; // 14
+    colors[coff + 1] = gt;
+    colors[coff + 2] = bt;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rt; // 15
+    colors[coff + 1] = gt;
+    colors[coff + 2] = bt;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    generatePlane(xSize, zSize, -5, obj, F_TOP_BOTTOM, vert_off, ind_off, col_off);
+    // bottom
+    colors[coff + 0] = rb; // 16
+    colors[coff + 1] = gb;
+    colors[coff + 2] = bb;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rb; // 17
+    colors[coff + 1] = gb;
+    colors[coff + 2] = bb;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rb; // 18
+    colors[coff + 1] = gb;
+    colors[coff + 2] = bb;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rb; // 19
+    colors[coff + 1] = gb;
+    colors[coff + 2] = bb;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    vert_off += nvt_top_bottom * 3;
-    ind_off += nin_top_bottom;
-    col_off += nvt_top_bottom * 4;
+    // back
+    colors[coff + 0] = rk; // 20
+    colors[coff + 1] = gk;
+    colors[coff + 2] = bk;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rk; // 21
+    colors[coff + 1] = gk;
+    colors[coff + 2] = bk;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rk; // 22
+    colors[coff + 1] = gk;
+    colors[coff + 2] = bk;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = rk; // 23
+    colors[coff + 1] = gk;
+    colors[coff + 2] = bk;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
 
-    printf("vert_off         == %d\n", vert_off);
-    printf("ind_off          == %d\n", ind_off);
-    printf("col_off          == %d\n", col_off);
+    // front
+    indicies[ioff + 0] = 0;
+    indicies[ioff + 1] = 1;
+    indicies[ioff + 2] = 2;
+    indicies[ioff + 3] = 1;
+    indicies[ioff + 4] = 2;
+    indicies[ioff + 5] = 3;
+    ioff += 6;
+
+    // left
+    indicies[ioff + 0] = 4;
+    indicies[ioff + 1] = 5;
+    indicies[ioff + 2] = 6;
+    indicies[ioff + 3] = 4;
+    indicies[ioff + 4] = 5;
+    indicies[ioff + 5] = 7;
+    ioff += 6;
+
+    // right
+    indicies[ioff + 0] = 8;
+    indicies[ioff + 1] = 9;
+    indicies[ioff + 2] = 10;
+    indicies[ioff + 3] = 8;
+    indicies[ioff + 4] = 9;
+    indicies[ioff + 5] = 11;
+    ioff += 6;
+
+    // top
+    indicies[ioff + 0] = 12;
+    indicies[ioff + 1] = 13;
+    indicies[ioff + 2] = 14;
+    indicies[ioff + 3] = 12;
+    indicies[ioff + 4] = 13;
+    indicies[ioff + 5] = 15;
+    ioff += 6;
+
+    // bottom
+    indicies[ioff + 0] = 16;
+    indicies[ioff + 1] = 17;
+    indicies[ioff + 2] = 18;
+    indicies[ioff + 3] = 16;
+    indicies[ioff + 4] = 17;
+    indicies[ioff + 5] = 19;
+    ioff += 6;
+
+    // back
+    indicies[ioff + 0] = 20;
+    indicies[ioff + 1] = 21;
+    indicies[ioff + 2] = 22;
+    indicies[ioff + 3] = 20;
+    indicies[ioff + 4] = 21;
+    indicies[ioff + 5] = 23;
+    ioff += 6;
+
+    obj->verts = verts;
+    obj->indicies = indicies;
+    obj->colors = colors;
 
     return obj;
 }

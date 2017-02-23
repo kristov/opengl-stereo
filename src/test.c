@@ -177,8 +177,8 @@ void drawscene() {
         //printf("numIndicies: %d\n", obj->numIndicies);
         glPushMatrix();
         {
-            glRotatef(theta,1.0,0.0,1.0);
-            glDrawElements(GL_TRIANGLES, obj->numIndicies - 3, GL_UNSIGNED_INT, NULL);
+            glRotatef(theta,1.0,1.0,1.0);
+            glDrawElements(GL_TRIANGLES, obj->numIndicies, GL_UNSIGNED_INT, NULL);
         }
         glPopMatrix();
     }
@@ -205,22 +205,12 @@ void storeCube() {
     GLuint glColorB;
     int vert_off, ind_off, col_off, i;
 
-    object3d* obj = generateCube(1, 1, 1);
+    object3d* obj = cube(1.0f, 1.0f, 1.0f);
     objects[numObjects] = obj;
     numObjects++;
 
     glGenVertexArrays(1, &obj->vertexArrayObject);
     glBindVertexArray(obj->vertexArrayObject);
-
-    col_off = (obj->numVerticies);
-    printf("numVerticies == %d\n", col_off);
-
-    col_off = 0;
-    vert_off = 0;
-    for (i = 0; i < obj->numVerticies; i++, col_off += 4, vert_off += 3) {
-        printf("X[%0.1f], Y[%0.1f], Z[%0.1f]  ", obj->verts[vert_off + 0], obj->verts[vert_off + 1], obj->verts[vert_off + 2]);
-        printf("r[%0.1f], g[%0.1f], b[%0.1f]\n", obj->colors[col_off + 0], obj->colors[col_off + 1], obj->colors[col_off + 2]);
-    }
 
     glGenBuffers(1, &vertexDataBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexDataBuffer);

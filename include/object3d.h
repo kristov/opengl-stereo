@@ -16,7 +16,9 @@ typedef struct {
     GLfloat* verts;
     GLuint* indicies;
     GLfloat* colors;
+    GLfloat* uvs;
 } object3d;
 
 void generatePlane(int xSize, int ySize, int z, object3d* obj, enum planeType pt, int vert_off, int ind_off, int col_off);
+object3d* square(GLfloat x, GLfloat y);
 object3d* cube(GLfloat x, GLfloat y, GLfloat z);

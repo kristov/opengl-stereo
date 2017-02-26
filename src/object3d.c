@@ -72,6 +72,101 @@ void generatePlane(int uSize, int vSize, int z, object3d* obj, enum planeType pt
     }
 }
 
+object3d* object3d_create() {
+    object3d* obj = malloc(sizeof(object3d));
+    obj->numVerticies = 0;
+    obj->numIndicies = 0;
+    obj->verts = NULL;
+    obj->colors = NULL;
+    obj->indicies = NULL;
+    obj->uvs = NULL;
+    return obj;
+}
+
+object3d* square(GLfloat x, GLfloat y) {
+    int nrVertFloats, nrColorFloats;
+    GLfloat* verts;
+    GLuint* indicies;
+    GLfloat* colors;
+    int ioff, voff, coff;
+    GLfloat r, g, b;
+
+    object3d* obj = object3d_create();
+
+    obj->numVerticies = 4;
+    nrVertFloats = 3 * obj->numVerticies;
+    verts = malloc(sizeof(GLfloat) * nrVertFloats);
+
+    obj->numIndicies = 6;
+    indicies = malloc(sizeof(GLuint) * obj->numIndicies);
+
+    nrColorFloats = 4 * obj->numVerticies;
+    colors = malloc(sizeof(GLfloat) * nrColorFloats);
+
+    r = 0.6f;
+    g = 0.6f;
+    b = 0.6f;
+
+    ioff = 0;
+    voff = 0;
+    coff = 0;
+
+    // front
+    verts[voff + 0] = 0.0f; // 0
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 1
+    verts[voff + 1] = 0.0f;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = 0.0f; // 2
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+    verts[voff + 0] = x; // 3
+    verts[voff + 1] = y;
+    verts[voff + 2] = 0.0f;
+    voff += 3;
+
+    // front
+    colors[coff + 0] = r; // 0
+    colors[coff + 1] = g;
+    colors[coff + 2] = b;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = r; // 1
+    colors[coff + 1] = g;
+    colors[coff + 2] = b;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = r; // 2
+    colors[coff + 1] = g;
+    colors[coff + 2] = b;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+    colors[coff + 0] = r; // 3
+    colors[coff + 1] = g;
+    colors[coff + 2] = b;
+    colors[coff + 3] = 1.0f;
+    coff += 4;
+
+    // front
+    indicies[ioff + 0] = 0;
+    indicies[ioff + 1] = 1;
+    indicies[ioff + 2] = 2;
+    indicies[ioff + 3] = 1;
+    indicies[ioff + 4] = 2;
+    indicies[ioff + 5] = 3;
+    ioff += 6;
+
+    obj->verts = verts;
+    obj->indicies = indicies;
+    obj->colors = colors;
+
+    return obj;
+}
+
 object3d* cube(GLfloat x, GLfloat y, GLfloat z) {
     int nrVertFloats, nrColorFloats;
     GLfloat* verts;
@@ -80,7 +175,7 @@ object3d* cube(GLfloat x, GLfloat y, GLfloat z) {
     int ioff, voff, coff;
     GLfloat rf, gf, bf, rl, gl, bl, rr, gr, br, rt, gt, bt, rb, gb, bb, rk, gk, bk;
 
-    object3d* obj = malloc(sizeof(object3d));
+    object3d* obj = object3d_create();
 
     obj->numVerticies = 4 * 6;
     nrVertFloats = 3 * obj->numVerticies;

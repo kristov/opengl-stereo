@@ -203,7 +203,7 @@ void drawScene(GLuint program) {
 }
 
 void storeObject(object3d* obj, GLuint program) {
-    GLuint glVertexB, glColorB;
+    GLuint glVertexB, glColorB, glTextB;
     GLuint vertexIndexBuffer;
     GLuint vertexDataBuffer;
     GLuint vertexArrayObject;
@@ -242,18 +242,28 @@ void storeObject(object3d* obj, GLuint program) {
     printOpenGLError(); // ERROR
 #endif
 
-    glColorB = glGetAttribLocation(program, "glColorB" );
-    glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vertSize));
-    glEnableVertexAttribArray(glColorB);
+    if (obj->uvs != NULL) {
+        glTextB = glGetAttribLocation(program, "glTextB" );
+        glVertexAttribPointer(glTextB, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vertSize + coloSize));
+        glEnableVertexAttribArray(glTextB);
 #ifdef PRINT_GL_ERRORS
-    printOpenGLError(); // ERROR
+        printOpenGLError(); // ERROR
 #endif
+    }
+    else {
+        glColorB = glGetAttribLocation(program, "glColorB" );
+        glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vertSize));
+        glEnableVertexAttribArray(glColorB);
+#ifdef PRINT_GL_ERRORS
+        printOpenGLError(); // ERROR
+#endif
+    }
 
     glBindVertexArray(0);
 }
 
 void storeCube(GLuint program) {
-    object3d* obj = cube(3.0f, 3.0f, 3.0f);
+    object3d* obj = cube(2.0f, 2.0f, 2.0f);
     objects[numObjects] = obj;
     numObjects++;
     storeObject(obj, program);
@@ -267,7 +277,7 @@ void storeSquare(GLuint program) {
     GLfloat* uvs;
     int voff;
 
-    object3d* obj = square(1.0f, 1.0f);
+    object3d* obj = square(2.0f, 2.0f);
     objects[numObjects] = obj;
     numObjects++;
     uvs = malloc(obj->numVerticies * 2 * sizeof(GLfloat));
@@ -314,6 +324,7 @@ void createTextTexture() {
 void createRenderTextures() {
     GLuint depthRenderBufferLeft;
     GLuint depthRenderBufferRight;
+    float borderColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
     glGenFramebuffers(1, &buffers.leftBuffer);
     glGenTextures(1, &buffers.renderedTextureLeft);
@@ -321,8 +332,9 @@ void createRenderTextures() {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenInfo.screenwidth / 2, screenInfo.screenheight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
@@ -343,8 +355,9 @@ void createRenderTextures() {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenInfo.screenwidth / 2, screenInfo.screenheight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
@@ -359,28 +372,6 @@ void createRenderTextures() {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBufferRight);
 
     return;
-
-/*
-    glGenFramebuffers(1, &buffers.leftBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, buffers.leftBuffer);
-
-    glGenTextures(1, &buffers.renderedTextureLeft);
-    glBindTexture(GL_TEXTURE_2D, buffers.renderedTextureLeft);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenInfo.screenwidth / 2, screenInfo.screenheight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    GLuint depthRenderBuffer;
-    glGenRenderbuffers(1, &depthRenderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenInfo.screenwidth / 2, screenInfo.screenheight);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBuffer);
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffers.renderedTextureLeft, 0);
-    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, DrawBuffers);
-*/
-
 }
 
 void setFrustum(void) {
@@ -480,7 +471,7 @@ void renderSceneToBuffers() {
     GLuint program = g_resources.program_buffer;
     glUseProgram(program);
 
-    glClearColor(1.0f,0.0f,0.0f,0.0f);
+    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 #ifdef PRINT_GL_ERRORS
     printOpenGLError(); // ERROR
@@ -511,7 +502,7 @@ void renderLeftBufferToWindow(GLuint program) {
     object3d* obj = objects[1];
     glPushMatrix();
     {
-        glTranslatef(-0.5, -0.5, 0.0);
+        glTranslatef(-1.0, -1.0, 0.0);
         renderObject(obj, program);
     }
     glPopMatrix();
@@ -542,7 +533,7 @@ void renderRightBufferToWindow(GLuint program) {
     object3d* obj = objects[1];
     glPushMatrix();
     {
-        glTranslatef(-0.5, -0.5, 0.0);
+        glTranslatef(-1.0, -1.0, 0.0);
         renderObject(obj, program);
     }
     glPopMatrix();

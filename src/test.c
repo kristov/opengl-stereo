@@ -178,11 +178,8 @@ static int makeResources(void) {
     if (g_resources.program_screen == 0)
         return 0;
 
-    //g_resources.barrel_power_addr = glGetUniformLocation(g_resources.program_screen, "barrel_power");
-
     glUseProgram(g_resources.program_buffer);
 
-    //glUniform1f(g_resources.barrel_power_addr, 0.6f);
     return 1;
 }
 
@@ -270,7 +267,7 @@ void storeSquare(GLuint program) {
     GLfloat* uvs;
     int voff;
 
-    object3d* obj = square(2.0f, 2.0f);
+    object3d* obj = square(1.0f, 1.0f);
     objects[numObjects] = obj;
     numObjects++;
     uvs = malloc(obj->numVerticies * 2 * sizeof(GLfloat));
@@ -445,7 +442,7 @@ void renderSceneToLeftBuffer(GLuint program) {
     glLoadIdentity();
     glPushMatrix();
     {
-        glTranslatef(0.0, 0.0, screenInfo.depthZ);
+        glTranslatef(-1.0, -1.0, screenInfo.depthZ);
         drawScene(program);
     }
     glPopMatrix();
@@ -473,7 +470,7 @@ void renderSceneToRightBuffer(GLuint program) {
 
     glPushMatrix();
     {
-        glTranslatef(0.0, 0.0, screenInfo.depthZ);
+        glTranslatef(-1.0, -1.0, screenInfo.depthZ);
         drawScene(program);
     }
     glPopMatrix();
@@ -514,7 +511,7 @@ void renderLeftBufferToWindow(GLuint program) {
     object3d* obj = objects[1];
     glPushMatrix();
     {
-        glTranslatef(-1.0, -1.0, 0.0);
+        glTranslatef(-0.5, -0.5, 0.0);
         renderObject(obj, program);
     }
     glPopMatrix();
@@ -545,7 +542,7 @@ void renderRightBufferToWindow(GLuint program) {
     object3d* obj = objects[1];
     glPushMatrix();
     {
-        glTranslatef(-1.0, -1.0, 0.0);
+        glTranslatef(-0.5, -0.5, 0.0);
         renderObject(obj, program);
     }
     glPopMatrix();
@@ -558,6 +555,10 @@ void renderRightBufferToWindow(GLuint program) {
 void renderBuffersToWindow() {
     GLuint program = g_resources.program_screen;
     glUseProgram(program);
+
+    g_resources.barrel_power_addr = glGetUniformLocation(program, "barrel_power");
+    glUniform1f(g_resources.barrel_power_addr, 1.1f);
+
 #ifdef PRINT_GL_ERRORS
     printOpenGLError(); // ERROR
 #endif

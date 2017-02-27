@@ -3,12 +3,12 @@
 uniform sampler2D tex0;
 varying vec4 Vertex_UV;
 const float PI = 3.1415926535;
-//uniform float BarrelPower;
+uniform float barrel_power;
 
 vec2 Distort(vec2 p) {
     float theta  = atan(p.y, p.x);
     float radius = length(p);
-    radius = pow(radius, 0.6);
+    radius = pow(radius, barrel_power);
     p.x = radius * cos(theta);
     p.y = radius * sin(theta);
     return 0.5 * (p + 1.0);
@@ -24,7 +24,6 @@ void main() {
     else {
         uv = Vertex_UV.xy;
     }
-    //vec4 c = texture2D(tex0, uv);
-    vec4 c = texture2D(tex0, Vertex_UV.xy);
+    vec4 c = texture2D(tex0, uv);
     gl_FragColor = c;
 }

@@ -6,6 +6,7 @@
 #define DTR 0.0174532925
 #include <unistd.h>
 #include "object3d.h"
+#include "ogl_objecttree.h"
 
 #define PRINT_GL_ERRORS
 
@@ -30,7 +31,6 @@ int printGlError(char *file, int line) {
 
 int rotate_delay = 30;
 double theta = 0;
-GLuint testTex;
 
 /*
 Eye separation is typically kept at 1/30th of the convergence distance and objects
@@ -74,8 +74,8 @@ static struct {
     GLuint barrel_power_addr;
 } g_resources;
 
-static object3d* objects[10];
-int numObjects = 0;
+ogl_node* oglObjectRoot;
+object3d* screenCanvas;
 
 GLchar *file_contents(const char *filename, GLint *length) {
     char *buffer = 0;
@@ -190,16 +190,7 @@ void renderObject(object3d* obj, GLuint program) {
 }
 
 void drawScene(GLuint program) {
-    int objID = 0;
-    //for (objID = 0; objID < numObjects; objID++) {
-        object3d* obj = objects[objID];
-        glPushMatrix();
-        {
-            glRotatef(theta,1.0,1.0,1.0);
-            renderObject(obj, program);
-        }
-        glPopMatrix();
-    //}
+    ogl_node_render(oglObjectRoot);
 }
 
 void storeObject(object3d* obj, GLuint program) {
@@ -262,13 +253,6 @@ void storeObject(object3d* obj, GLuint program) {
     glBindVertexArray(0);
 }
 
-void storeCube(GLuint program) {
-    object3d* obj = cube(2.0f, 2.0f, 2.0f);
-    objects[numObjects] = obj;
-    numObjects++;
-    storeObject(obj, program);
-}
-
 void storeSquare(GLuint program) {
     GLuint glVertexB, glColorB;
     GLuint vertexIndexBuffer;
@@ -278,8 +262,7 @@ void storeSquare(GLuint program) {
     int voff;
 
     object3d* obj = square(2.0f, 2.0f);
-    objects[numObjects] = obj;
-    numObjects++;
+    screenCanvas = obj;
     uvs = malloc(obj->numVerticies * 2 * sizeof(GLfloat));
 
     voff = 0;
@@ -302,23 +285,21 @@ void storeSquare(GLuint program) {
     storeObject(obj, program);
 }
 
-void storeObjects() {
-    storeCube(g_resources.program_buffer);
-    storeSquare(g_resources.program_screen);
+void createObjectTree(GLuint program) {
+    ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
+    ogl_node* cube2 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
+    ogl_node_color(cube2, 0.3f, 0.1f, 0.9f);
+    ogl_node* trans1 = ogl_node_trans_create(1.0f, 1.0f, 1.0f, cube2);
+    ogl_node* rotate1 = ogl_node_rotate_create(20.0f, 20.0f, 20.0f, trans1);
+    //ogl_node* root = ogl_node_rotate_create(10.0f, 10.0f, 10.0f, cube1);
+    ogl_node* root = rotate1;
+    ogl_node_realize(root, program);
+    oglObjectRoot = root;
 }
 
-void createTextTexture() {
-    glGenTextures(1, &testTex);
-    glBindTexture(GL_TEXTURE_2D, testTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    float pixels[] = {
-        0.0f, 0.0f, 0.0f,  1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f
-    };
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, pixels);
+void storeObjects() {
+    createObjectTree(g_resources.program_buffer);
+    storeSquare(g_resources.program_screen);
 }
 
 void createRenderTextures() {
@@ -494,16 +475,14 @@ void renderLeftBufferToWindow(GLuint program) {
     texLoc = glGetUniformLocation(program, "tex0");
     glUniform1i(texLoc, 0);
     glBindTexture(GL_TEXTURE_2D, buffers.renderedTextureLeft);
-    //glBindTexture(GL_TEXTURE_2D, testTex);
 #ifdef PRINT_GL_ERRORS
     printOpenGLError(); // ERROR
 #endif
 
-    object3d* obj = objects[1];
     glPushMatrix();
     {
         glTranslatef(-1.0, -1.0, 0.0);
-        renderObject(obj, program);
+        renderObject(screenCanvas, program);
     }
     glPopMatrix();
 
@@ -525,16 +504,14 @@ void renderRightBufferToWindow(GLuint program) {
     texLoc = glGetUniformLocation(program, "tex0");
     glUniform1i(texLoc, 0);
     glBindTexture(GL_TEXTURE_2D, buffers.renderedTextureRight);
-    //glBindTexture(GL_TEXTURE_2D, testTex);
 #ifdef PRINT_GL_ERRORS
     printOpenGLError(); // ERROR
 #endif
 
-    object3d* obj = objects[1];
     glPushMatrix();
     {
         glTranslatef(-1.0, -1.0, 0.0);
-        renderObject(obj, program);
+        renderObject(screenCanvas, program);
     }
     glPopMatrix();
 
@@ -590,11 +567,15 @@ GLvoid display(GLvoid) {
 }
 
 void initGL(void) {
+    GLfloat lightpos[] = { 0.5f, 1.0f, 1.0f, 0.0f };
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glMatrixMode(GL_PROJECTION);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
 }
 
 void initScreenInfo() {
@@ -623,7 +604,6 @@ void init3dSystem() {
     makeResources();
     setFrustum();
     createRenderTextures();
-    createTextTexture();
     storeObjects();
 }
 

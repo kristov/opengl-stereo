@@ -16,7 +16,7 @@ void drawScene(GLuint program) {
 }
 
 void createObjectTree(GLuint program) {
-    ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
+    //ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
     ogl_node* cube2 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
     ogl_node_color(cube2, 0.3f, 0.1f, 0.9f);
     ogl_node* trans1 = ogl_node_trans_create(1.0f, 1.0f, 1.0f, cube2);
@@ -64,7 +64,8 @@ void init(int *argc, char **argv) {
     //createObjectTree();
 }
 
-void main(int argc, char **argv) {
+int main(int argc, char **argv) {
     init(&argc, argv);
     glutMainLoop();
+    return 0;
 }

@@ -1,3 +1,5 @@
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
 #include "ogl_objecttree.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -65,11 +67,11 @@ void ogl_object_mesh_color(ogl_object_mesh* mesh, GLfloat r, GLfloat g, GLfloat 
 }
 
 void ogl_node_color(ogl_node* node, GLfloat r, GLfloat g, GLfloat b) {
-    switch(node->type) {
-        case OGL_OBJECT_MESH:
-            ogl_object_mesh_color(node->object_pointer.object_mesh, r, g, b);
-            break;
+    if (node->type != OGL_OBJECT_MESH) {
+        return;
     }
+    ogl_object_mesh_color(node->object_pointer.object_mesh, r, g, b);
+    return;
 }
 
 ogl_node* ogl_node_trans_create(GLfloat x, GLfloat y, GLfloat z, ogl_node* child_node) {

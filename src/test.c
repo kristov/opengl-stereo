@@ -11,10 +11,6 @@ double theta = 0;
 opengl_stereo* ostereo;
 ogl_node* oglObjectRoot;
 
-void drawScene(GLuint program) {
-    ogl_node_render(oglObjectRoot);
-}
-
 void createObjectTree(GLuint program) {
     //ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
     ogl_node* cube2 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
@@ -27,7 +23,8 @@ void createObjectTree(GLuint program) {
     oglObjectRoot = root;
 }
 
-void draw_scene(GLuint program) {
+void draw_scene() {
+    ogl_node_render(oglObjectRoot);
 }
 
 void rotate(int value) {
@@ -61,7 +58,8 @@ void init(int *argc, char **argv) {
 
     initWindowingSystem(argc, argv, width, height);
     ostereo = opengl_stereo_create(width, height);
-    //createObjectTree();
+    ostereo->draw_scene_function = &draw_scene;
+    createObjectTree(ostereo->default_scene_shader_program_id);
 }
 
 int main(int argc, char **argv) {

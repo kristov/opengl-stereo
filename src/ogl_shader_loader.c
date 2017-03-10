@@ -48,13 +48,10 @@ static GLuint make_shader(GLenum type, const char *filename) {
         return 0;
     }
 
-printf("%d\n", length);
     shader = glCreateShader(type);
     glShaderSource(shader, 1, (const GLchar**)&source, &length);
-printf("here\n");
     free(source);
     glCompileShader(shader);
-printf("here\n");
 
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_ok);
     if (!shader_ok) {
@@ -90,7 +87,7 @@ GLuint ogl_shader_loader_load(char *vert_file, char *frag_file) {
     if (vertex_shader_id == 0)
         return 0;
 
-    fragment_shader_id = make_shader(GL_VERTEX_SHADER, frag_file);
+    fragment_shader_id = make_shader(GL_FRAGMENT_SHADER, frag_file);
     if (vertex_shader_id == 0)
         return 0;
 

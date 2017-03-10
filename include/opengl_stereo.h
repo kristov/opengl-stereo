@@ -27,7 +27,7 @@ typedef struct opengl_stereo {
     GLuint screen_plane_vao;
     GLuint screen_shader_program_id;
     GLuint default_scene_shader_program_id;
-    void (*draw_scene_function)(GLuint program_id);
+    void (*draw_scene_function)();
     GLuint barrel_power_id;
     opengl_stereo_camera* left_camera;
     opengl_stereo_camera* right_camera;

@@ -240,7 +240,7 @@ void opengl_stereo_render_scene_to_left_buffer(opengl_stereo* ostereo) {
     glPushMatrix();
     {
         glTranslatef(-1.0, -1.0, ostereo->depthZ);
-        ostereo->draw_scene_function(ostereo->default_scene_shader_program_id);
+        ostereo->draw_scene_function();
     }
     glPopMatrix();
 }
@@ -268,13 +268,13 @@ void opengl_stereo_render_scene_to_right_buffer(opengl_stereo* ostereo) {
     glPushMatrix();
     {
         glTranslatef(-1.0, -1.0, ostereo->depthZ);
-        ostereo->draw_scene_function(ostereo->default_scene_shader_program_id);
+        ostereo->draw_scene_function();
     }
     glPopMatrix();
 }
 
 void opengl_stereo_render_scene_to_buffers(opengl_stereo* ostereo) {
-    //glUseProgram(ostereo->screen_shader_program_id);
+    glUseProgram(ostereo->default_scene_shader_program_id);
 
     glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -381,6 +381,10 @@ void opengl_stereo_render_buffers_to_window(opengl_stereo* ostereo) {
             opengl_stereo_render_right_buffer_to_window()
 */
 void opengl_stereo_display(opengl_stereo* ostereo) {
+    if (ostereo->draw_scene_function == NULL) {
+        fprintf(stderr, "opengl_stereo_ERROR: draw_scene_function not attached\n");
+        return;
+    }
     opengl_stereo_render_scene_to_buffers(ostereo);
     opengl_stereo_render_buffers_to_window(ostereo);
 }
@@ -440,13 +444,14 @@ opengl_stereo_buffer_store* opengl_stereo_buffer_store_new() {
 }
 
 opengl_stereo* opengl_stereo_new() {
-    opengl_stereo* ostereo = malloc(sizeof(opengl_stereo*));
+    opengl_stereo* ostereo = malloc(sizeof(opengl_stereo));
     ostereo->width = 0;
     ostereo->height = 0;
     ostereo->left_camera = NULL;
     ostereo->right_camera = NULL;
     ostereo->screen_buffers = NULL;
     ostereo->screen_plane_vao = 0;
+    ostereo->draw_scene_function = NULL;
     return ostereo;
 }
 

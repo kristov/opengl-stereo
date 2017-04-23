@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef RASPBERRYPI
+#include <GLES2/gl2.h>
+#else /* not RASPBERRYPI */
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
+#endif /* RASPBERRYPI */
 
 GLchar *file_contents(const char *filename, GLint *length) {
     char *buffer = 0;
@@ -26,18 +30,27 @@ GLchar *file_contents(const char *filename, GLint *length) {
     return NULL;
 }
 
-static void show_info_log(GLuint object, PFNGLGETSHADERIVPROC glGet__iv, PFNGLGETSHADERINFOLOGPROC glGet__InfoLog) {
+static void show_shader_info_log(const char* filename, GLuint object) {
     GLint log_length;
     char *log;
-
-    glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length);
+    glGetShaderiv(object, GL_INFO_LOG_LENGTH, &log_length);
     log = malloc(log_length);
-    glGet__InfoLog(object, log_length, NULL, log);
-    fprintf(stderr, "%s", log);
+    glGetShaderInfoLog(object, log_length, NULL, log);
+    fprintf(stderr, "%s: %s\n", filename, log);
     free(log);
 }
 
-static GLuint make_shader(GLenum type, const char *filename) {
+static void show_program_info_log(GLuint object) {
+    GLint log_length;
+    char *log;
+    glGetProgramiv(object, GL_INFO_LOG_LENGTH, &log_length);
+    log = malloc(log_length);
+    glGetProgramInfoLog(object, log_length, NULL, log);
+    fprintf(stderr, "PROGRAM: %s\n", log);
+    free(log);
+}
+
+static GLuint make_shader(GLenum type, const char* filename) {
     GLint length;
     GLchar *source = file_contents(filename, &length);
     GLuint shader;
@@ -56,14 +69,14 @@ static GLuint make_shader(GLenum type, const char *filename) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_ok);
     if (!shader_ok) {
         fprintf(stderr, "Failed to compile %s:\n", filename);
-        show_info_log(shader, glGetShaderiv, glGetShaderInfoLog);
+        show_shader_info_log(filename, shader);
         glDeleteShader(shader);
         return 0;
     }
     return shader;
 }
 
-static GLuint make_program(GLuint vertex_shader, GLuint fragment_shader) {
+static GLuint make_program(char* filename, GLuint vertex_shader, GLuint fragment_shader) {
     GLint program_ok;
 
     GLuint program = glCreateProgram();
@@ -72,8 +85,8 @@ static GLuint make_program(GLuint vertex_shader, GLuint fragment_shader) {
     glLinkProgram(program);
     glGetProgramiv(program, GL_LINK_STATUS, &program_ok);
     if (!program_ok) {
-        fprintf(stderr, "Failed to link shader program:\n");
-        show_info_log(program, glGetProgramiv, glGetProgramInfoLog);
+        fprintf(stderr, "Failed to link shader program [%s]:\n", filename);
+        show_program_info_log(program);
         glDeleteProgram(program);
         return 0;
     }
@@ -91,7 +104,7 @@ GLuint ogl_shader_loader_load(char *vert_file, char *frag_file) {
     if (vertex_shader_id == 0)
         return 0;
 
-    program_id = make_program(vertex_shader_id, fragment_shader_id);
+    program_id = make_program(vert_file, vertex_shader_id, fragment_shader_id);
     if (program_id == 0)
         return 0;
 

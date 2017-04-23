@@ -1,15 +1,21 @@
 #version 120
 
-attribute vec3 glVertexB;
-attribute vec3 glNormalB;
-attribute vec4 glColorB;
+attribute vec3 b_vertex;
+attribute vec3 b_normal;
+attribute vec4 b_color;
 
-varying vec3 N;
-varying vec3 v;
+uniform mat4 m_mvp;
+uniform mat4 m_mv;
+uniform mat4 m_normal;
+
+varying vec4 v_color;
+varying vec3 v_normal;
+varying vec3 v_position;
 
 void main(void) {
-    gl_FrontColor = glColorB;
-    v = vec3(gl_ModelViewMatrix * vec4(glVertexB, 1));
-    N = normalize(gl_NormalMatrix * glNormalB);
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(glVertexB, 1);
+    v_color = b_color;
+    //v_normal = b_normal;
+    v_normal = mat3(m_normal) * b_normal;
+    v_position = vec3(m_normal * vec4(b_vertex, 1.0));
+    gl_Position = m_mvp * vec4(b_vertex, 1.0);
 }

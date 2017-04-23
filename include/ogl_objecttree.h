@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <GL/gl.h>
-
 typedef struct ogl_node ogl_node;
 
 typedef enum ogl_node_type {
@@ -10,13 +7,18 @@ typedef enum ogl_node_type {
 } ogl_node_type;
 
 typedef struct ogl_object_mesh {
-    GLuint vertex_array_object_id;
+    GLuint shader_program_id;
+    GLuint vertex_data_buffer_id;
+    GLuint index_data_buffer_id;
+    GLuint norm_offset;
+    GLuint color_offset;
+    GLuint text_offset;
     int visible;
     int nr_verticies;
     int nr_indicies;
     GLfloat* verts;
     GLfloat* norms;
-    GLuint* indicies;
+    GLushort* indicies;
     GLfloat* colors;
     GLfloat* uvs;
 } ogl_object_mesh;
@@ -58,5 +60,7 @@ ogl_node* ogl_node_trans_create(GLfloat x, GLfloat y, GLfloat z, ogl_node* child
 ogl_node* ogl_node_rotate_create(GLfloat x, GLfloat y, GLfloat z, ogl_node* child_node);
 
 void ogl_node_realize(ogl_node* node, GLuint program);
-void ogl_node_render(ogl_node* node);
+void ogl_node_render(ogl_node* node, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix);
 void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat y, GLfloat z);
+
+void ogl_node_rotate_change(ogl_node* node, GLfloat x, GLfloat y, GLfloat z);

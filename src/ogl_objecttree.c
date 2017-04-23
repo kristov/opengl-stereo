@@ -1,8 +1,66 @@
+#ifdef RASPBERRYPI
+#include <GLES/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else /* not RASPBERRYPI */
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
+#endif /* RASPBERRYPI */
+#include <stdlib.h>
+#include <stdio.h>
 #include "ogl_objecttree.h"
+#include "esm.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
+#define PRINT_GL_ERRORS
+
+#define printOpenGLError() OprintGlError(__FILE__, __LINE__)
+
+int OprintGlError(char *file, int line) {
+    GLenum glErr;
+    int retCode = 0;
+    glErr = glGetError();
+    switch (glErr) {
+        case GL_INVALID_ENUM:
+            printf("GL_INVALID_ENUM in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_INVALID_VALUE:
+            printf("GL_INVALID_VALUE in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_INVALID_OPERATION:
+            printf("GL_INVALID_OPERATION in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_STACK_OVERFLOW:
+            printf("GL_STACK_OVERFLOW in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_STACK_UNDERFLOW:
+            printf("GL_STACK_UNDERFLOW in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_OUT_OF_MEMORY:
+            printf("GL_OUT_OF_MEMORY in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            printf("GL_INVALID_FRAMEBUFFER_OPERATION in file %s @ line %d: %d\n", file, line, glErr);
+            retCode = 1;
+        break;
+        //case GL_CONTEXT_LOST:
+        //    printf("GL_CONTEXT_LOST in file %s @ line %d: %d\n", file, line, glErr);
+        //    retCode = 1;
+        //break;
+        //case GL_TABLE_TOO_LARGE:
+        //    printf("GL_TABLE_TOO_LARGE in file %s @ line %d: %d\n", file, line, glErr);
+        //    retCode = 1;
+        //break;
+    }
+    return retCode;
+}
 
 ogl_node* ogl_node_create(ogl_node_type type) {
     ogl_node* node = malloc(sizeof(ogl_node));
@@ -12,7 +70,12 @@ ogl_node* ogl_node_create(ogl_node_type type) {
 
 ogl_object_mesh* ogl_object_mesh_create() {
     ogl_object_mesh* mesh = malloc(sizeof(ogl_object_mesh));
-    mesh->vertex_array_object_id = 0;
+    mesh->shader_program_id = 0;
+    mesh->vertex_data_buffer_id = 0;
+    mesh->index_data_buffer_id = 0;
+    mesh->norm_offset = 0;
+    mesh->color_offset = 0;
+    mesh->text_offset = 0;
     mesh->nr_verticies = 0;
     mesh->nr_indicies = 0;
     mesh->visible = 0;
@@ -97,59 +160,28 @@ ogl_node* ogl_node_rotate_create(GLfloat x, GLfloat y, GLfloat z, ogl_node* chil
 }
 
 void ogl_object_mesh_realize(ogl_object_mesh* mesh, GLuint program) {
-    GLuint glVertexB, glNormalB, glColorB, glTextB;
-    GLuint vertex_index_buffer;
-    GLuint vertex_data_buffer;
-    GLuint buff_size, vert_size, norm_size, colo_size, text_size, indi_size;
-
-    glGenVertexArrays(1, &mesh->vertex_array_object_id);
-    glBindVertexArray(mesh->vertex_array_object_id);
+    GLuint vert_size, norm_size, colo_size, indi_size, buff_size;
 
     vert_size = mesh->nr_verticies * 3 * sizeof(GLfloat);
     norm_size = vert_size;
     colo_size = mesh->nr_verticies * 4 * sizeof(GLfloat);
-    text_size = mesh->nr_verticies * 2 * sizeof(GLfloat);
     indi_size = mesh->nr_indicies * sizeof(GLuint);
-
     buff_size = vert_size + norm_size + colo_size;
-    if (mesh->uvs != NULL) {
-        buff_size += text_size;
-    }
 
-    glGenBuffers(1, &vertex_data_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_data_buffer);
+    mesh->norm_offset = vert_size;
+    mesh->color_offset = vert_size + norm_size;
+    mesh->shader_program_id = program;
+
+    glGenBuffers(1, &mesh->vertex_data_buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_data_buffer_id);
     glBufferData(GL_ARRAY_BUFFER, buff_size, NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, vert_size, mesh->verts);
-    glBufferSubData(GL_ARRAY_BUFFER, vert_size, norm_size, mesh->norms);
-    glBufferSubData(GL_ARRAY_BUFFER, vert_size + norm_size, colo_size, mesh->colors);
-    if (mesh->uvs != NULL) {
-        glBufferSubData(GL_ARRAY_BUFFER, vert_size + norm_size + colo_size, text_size, mesh->uvs);
-    }
+    glBufferSubData(GL_ARRAY_BUFFER, mesh->norm_offset, norm_size, mesh->norms);
+    glBufferSubData(GL_ARRAY_BUFFER, mesh->color_offset, colo_size, mesh->colors);
 
-    glGenBuffers(1, &vertex_index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertex_index_buffer);
+    glGenBuffers(1, &mesh->index_data_buffer_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_data_buffer_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indi_size, mesh->indicies, GL_STATIC_DRAW);
-
-    glVertexB = glGetAttribLocation(program, "glVertexB" );
-    glVertexAttribPointer(glVertexB, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(glVertexB);
-
-    glNormalB = glGetAttribLocation(program, "glNormalB" );
-    glVertexAttribPointer(glNormalB, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vert_size));
-    glEnableVertexAttribArray(glNormalB);
-
-    if (mesh->uvs != NULL) {
-        glTextB = glGetAttribLocation(program, "glTextB" );
-        glVertexAttribPointer(glTextB, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vert_size + norm_size + colo_size));
-        glEnableVertexAttribArray(glTextB);
-    }
-    else {
-        glColorB = glGetAttribLocation(program, "glColorB" );
-        glVertexAttribPointer(glColorB, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vert_size + norm_size));
-        glEnableVertexAttribArray(glColorB);
-    }
-
-    glBindVertexArray(0);
 }
 
 void ogl_object_trans_realize(ogl_object_trans* trans, GLuint program) {
@@ -178,61 +210,113 @@ void ogl_node_realize(ogl_node* node, GLuint program) {
     }
 }
 
-void ogl_object_rotate_render(ogl_object_rotate* rotate) {
+void ogl_object_rotate_render(ogl_object_rotate* rotate, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix) {
     if (rotate->x != 0) {
-        glRotatef(rotate->x, 1, 0, 0);
+        esmRotatef(model_matrix, rotate->x, 1, 0, 0);
     }
     if (rotate->y != 0) {
-        glRotatef(rotate->z, 0, 1, 0);
+        esmRotatef(model_matrix, rotate->y, 0, 1, 0);
     }
     if (rotate->z != 0) {
-        glRotatef(rotate->z, 0, 0, 1);
+        esmRotatef(model_matrix, rotate->z, 0, 0, 1);
     }
     if (rotate->node != NULL) {
-        ogl_node_render(rotate->node);
+        ogl_node_render(rotate->node, projection_matrix, view_matrix, model_matrix);
     }
     if (rotate->z != 0) {
-        glRotatef(0 - rotate->z, 0, 0, 1);
+        esmRotatef(model_matrix, 0 - rotate->z, 0, 0, 1);
     }
     if (rotate->y != 0) {
-        glRotatef(0 - rotate->z, 0, 1, 0);
+        esmRotatef(model_matrix, 0 - rotate->y, 0, 1, 0);
     }
     if (rotate->x != 0) {
-        glRotatef(0 - rotate->x, 1, 0, 0);
+        esmRotatef(model_matrix, 0 - rotate->x, 1, 0, 0);
     }
 }
 
-void ogl_object_trans_render(ogl_object_trans* trans) {
-    glTranslatef(trans->x, trans->y, trans->z);
+void ogl_object_trans_render(ogl_object_trans* trans, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix) {
+    esmTranslatef(model_matrix, trans->x, trans->y, trans->z);
     if (trans->node != NULL) {
-        ogl_node_render(trans->node);
+        ogl_node_render(trans->node, projection_matrix, view_matrix, model_matrix);
     }
-    glTranslatef(0 - trans->x, 0 - trans->y, 0 - trans->z);
+    esmTranslatef(model_matrix, 0 - trans->x, 0 - trans->y, 0 - trans->z);
 }
 
-void ogl_object_mesh_render(ogl_object_mesh* mesh) {
-    if (mesh->vertex_array_object_id == 0) {
-        return;
-    }
+void ogl_object_mesh_render(ogl_object_mesh* mesh, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix) {
+    GLuint b_vertex, b_normal, b_color, m_mvp, m_mv, m_normal;
+    GLfloat* normal_matrix;
+    GLfloat* mvp_matrix;
+    GLfloat* mv_matrix;
+
     if (mesh->visible == 0) {
         return;
     }
-    glBindVertexArray(mesh->vertex_array_object_id);
-    glDrawElements(GL_TRIANGLES, mesh->nr_indicies, GL_UNSIGNED_INT, NULL);
-    glBindVertexArray(0);
+
+    mv_matrix = esmCreateCopy(view_matrix);
+    esmMultiply(mv_matrix, model_matrix);
+    normal_matrix = esmNormalMatrixFromProjection(mv_matrix);
+
+    mvp_matrix = esmCreateCopy(projection_matrix);
+    esmMultiply(mvp_matrix, view_matrix);
+    esmMultiply(mvp_matrix, model_matrix);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_data_buffer_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_data_buffer_id);
+
+    b_vertex = glGetAttribLocation(mesh->shader_program_id, "b_vertex");
+    glVertexAttribPointer(b_vertex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(b_vertex);
+
+    b_normal = glGetAttribLocation(mesh->shader_program_id, "b_normal");
+    glVertexAttribPointer(b_normal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(mesh->norm_offset));
+    glEnableVertexAttribArray(b_normal);
+
+    b_color = glGetAttribLocation(mesh->shader_program_id, "b_color");
+    glVertexAttribPointer(b_color, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(mesh->color_offset));
+    glEnableVertexAttribArray(b_color);
+
+    m_mvp = glGetUniformLocation(mesh->shader_program_id, "m_mvp");
+    glUniformMatrix4fv(m_mvp, 1, GL_FALSE, mvp_matrix);
+    glEnableVertexAttribArray(m_mvp);
+
+    m_mv = glGetUniformLocation(mesh->shader_program_id, "m_mv");
+    glUniformMatrix4fv(m_mv, 1, GL_FALSE, mv_matrix);
+    glEnableVertexAttribArray(m_mv);
+
+    m_normal = glGetUniformLocation(mesh->shader_program_id, "m_normal");
+    glUniformMatrix4fv(m_normal, 1, GL_FALSE, model_matrix);
+    glEnableVertexAttribArray(m_normal);
+
+    glDrawElements(GL_TRIANGLES, mesh->nr_indicies, GL_UNSIGNED_SHORT, NULL);
+
+    esmDestroy(normal_matrix);
+    esmDestroy(mvp_matrix);
+    esmDestroy(mv_matrix);
 }
 
-void ogl_node_render(ogl_node* node) {
+void ogl_node_render(ogl_node* node, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix) {
     switch(node->type) {
         case OGL_OBJECT_MESH:
-            ogl_object_mesh_render(node->object_pointer.object_mesh);
+            ogl_object_mesh_render(node->object_pointer.object_mesh, projection_matrix, view_matrix, model_matrix);
             break;
         case OGL_OBJECT_TRANS:
-            ogl_object_trans_render(node->object_pointer.object_trans);
+            ogl_object_trans_render(node->object_pointer.object_trans, projection_matrix, view_matrix, model_matrix);
             break;
         case OGL_OBJECT_ROTATE:
-            ogl_object_rotate_render(node->object_pointer.object_rotate);
+            ogl_object_rotate_render(node->object_pointer.object_rotate, projection_matrix, view_matrix, model_matrix);
             break;
+    }
+}
+
+void ogl_object_rotate_change(ogl_object_rotate* rotate, GLfloat x, GLfloat y, GLfloat z) {
+    if (x != 0.0) { rotate->x += x; }
+    if (y != 0.0) { rotate->y += y; }
+    if (z != 0.0) { rotate->z += z; }
+}
+
+void ogl_node_rotate_change(ogl_node* node, GLfloat x, GLfloat y, GLfloat z) {
+    if (node->type == OGL_OBJECT_ROTATE) {
+        ogl_object_rotate_change(node->object_pointer.object_rotate, x, y, z);
     }
 }
 
@@ -240,7 +324,7 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
     int nr_vert_floats, nr_color_floats;
     GLfloat* verts;
     GLfloat* norms;
-    GLuint* indicies;
+    GLushort* indicies;
     GLfloat* colors;
     int ioff, voff, coff;
     GLfloat r, g, b;
@@ -251,7 +335,7 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
     norms = malloc(sizeof(GLfloat) * nr_vert_floats);
 
     mesh->nr_indicies = 6 * 6;
-    indicies = malloc(sizeof(GLuint) * mesh->nr_indicies);
+    indicies = malloc(sizeof(GLushort) * mesh->nr_indicies);
 
     nr_color_floats = 4 * mesh->nr_verticies;
     colors = malloc(sizeof(GLfloat) * nr_color_floats);

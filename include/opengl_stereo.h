@@ -1,9 +1,8 @@
-
 typedef struct opengl_stereo_camera {
-    GLdouble left_frustum;
-    GLdouble right_frustum;
-    GLdouble bottom_frustum;
-    GLdouble top_frustum;
+    GLfloat left_frustum;
+    GLfloat right_frustum;
+    GLfloat bottom_frustum;
+    GLfloat top_frustum;
     GLfloat model_translation;
 } opengl_stereo_camera;
 
@@ -24,9 +23,15 @@ typedef struct opengl_stereo {
     double farZ;
     double screenZ;
     double IOD;
-    GLuint screen_plane_vao;
+    GLuint screen_plane_vdb;
+    GLuint screen_plane_idb;
+    GLuint screen_text_offset;
+    GLfloat* screen_matrix;
     GLuint screen_shader_program_id;
     GLuint default_scene_shader_program_id;
+    GLfloat* model_matrix;
+    GLfloat* view_matrix;
+    GLfloat* projection_matrix;
     void (*draw_scene_function)();
     GLuint barrel_power_id;
     opengl_stereo_camera* left_camera;

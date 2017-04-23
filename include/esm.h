@@ -1,0 +1,12 @@
+void esmMultiply(GLfloat* M, GLfloat* M2);
+void esmScalef(GLfloat* M, GLfloat x, GLfloat y, GLfloat z);
+void esmTranslatef(GLfloat* M, GLfloat x, GLfloat y, GLfloat z);
+void esmRotatef(GLfloat* M, GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+void esmFrustumf(GLfloat* M, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far);
+void esmPerspectivef(GLfloat* M, GLfloat fovy, GLfloat aspect, GLfloat near, GLfloat far);
+void esmOrthof(GLfloat* M, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far);
+void esmLoadIdentity(GLfloat* M);
+GLfloat* esmNormalMatrixFromProjection(GLfloat* M);
+GLfloat* esmCreate();
+GLfloat* esmCreateCopy(GLfloat* M);
+void esmDestroy(GLfloat* M);

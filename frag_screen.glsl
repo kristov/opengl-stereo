@@ -1,12 +1,13 @@
 #version 120
 
-uniform sampler2D tex0;
-varying vec2 Vertex_UV;
 const float PI = 3.1415926535;
 uniform float barrel_power;
 
+uniform sampler2D tex0;
+varying vec2 v_texcoord;
+
 vec2 Distort(vec2 p) {
-    float theta  = atan(p.y, p.x);
+    float theta = atan(p.y, p.x);
     float radius = length(p);
     radius = pow(radius, barrel_power);
     p.x = radius * cos(theta);
@@ -15,15 +16,14 @@ vec2 Distort(vec2 p) {
 }
 
 void main() {
-    vec2 xy = 2.0 * Vertex_UV - 1.0;
+    vec2 xy = 2.0 * v_texcoord - 1.0;
     vec2 uv;
     float d = length(xy);
     if (d < 1.0) {
         uv = Distort(xy);
     }
     else {
-        uv = Vertex_UV;
+        uv = v_texcoord;
     }
-    vec4 c = texture2D(tex0, uv);
-    gl_FragColor = c;
+    gl_FragColor = texture2D(tex0, uv);
 }

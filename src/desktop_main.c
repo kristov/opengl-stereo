@@ -5,11 +5,9 @@
 #include "opengl_stereo.h"
 #include "ogl_objecttree.h"
 
-int rotate_delay = 30;
-double theta = 0;
-
 opengl_stereo* ostereo;
 ogl_node* oglObjectRoot;
+ogl_node* rotate;
 
 void createObjectTree(GLuint program) {
     //ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
@@ -24,13 +22,8 @@ void createObjectTree(GLuint program) {
 }
 
 void draw_scene() {
-    ogl_node_render(oglObjectRoot);
-}
-
-void rotate(int value) {
-    theta += 1;
-    glutPostRedisplay();
-    glutTimerFunc(rotate_delay, rotate, 0);
+    //ogl_node_rotate_change(rotate, 0.0, 0.01, 0.0);
+    ogl_node_render(oglObjectRoot, ostereo->projection_matrix, ostereo->view_matrix, ostereo->model_matrix);
 }
 
 GLvoid reshape(int w, int h) {
@@ -49,7 +42,6 @@ void initWindowingSystem(int *argc, char **argv, int width, int height) {
     glutCreateWindow("Stereo Test");
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
-    glutTimerFunc(rotate_delay, rotate, 0);
 }
 
 void init(int *argc, char **argv) {

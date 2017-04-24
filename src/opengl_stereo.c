@@ -14,6 +14,18 @@
 #include "ogl_shader_loader.h"
 #include "esm.h"
 
+#ifdef RASPBERRYPI
+static char vert_screen[] = "shaders/100/vert_screen.glsl";
+static char frag_screen[] = "shaders/100/frag_screen.glsl";
+static char vert_buffer[] = "shaders/100/vert_buffer.glsl";
+static char frag_buffer[] = "shaders/100/frag_buffer.glsl";
+#else /* not RASPBERRYPI */
+static char vert_screen[] = "shaders/120/vert_screen.glsl";
+static char frag_screen[] = "shaders/120/frag_screen.glsl";
+static char vert_buffer[] = "shaders/120/vert_buffer.glsl";
+static char frag_buffer[] = "shaders/120/frag_buffer.glsl";
+#endif /* RASPBERRYPI */
+
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 int printGlError(char *file, int line) {
@@ -59,8 +71,8 @@ closer than half the convergence distance are avoided in the scene.
 */
 
 void opengl_stereo_load_screen_shader(opengl_stereo* ostereo) {
-    ostereo->screen_shader_program_id = ogl_shader_loader_load("vert_screen.glsl", "frag_screen.glsl");
-    ostereo->default_scene_shader_program_id = ogl_shader_loader_load("vert_buffer.glsl", "frag_buffer.glsl");
+    ostereo->screen_shader_program_id = ogl_shader_loader_load(vert_screen, frag_screen);
+    ostereo->default_scene_shader_program_id = ogl_shader_loader_load(vert_buffer, frag_buffer);
 }
 
 void opengl_stereo_store_screen_plane(opengl_stereo* ostereo) {

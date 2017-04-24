@@ -5,25 +5,31 @@
 #include "opengl_stereo.h"
 #include "ogl_objecttree.h"
 
+int rotate_delay = 30;
+
 opengl_stereo* ostereo;
 ogl_node* oglObjectRoot;
 ogl_node* rotate;
 
 void createObjectTree(GLuint program) {
-    //ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
-    ogl_node* cube2 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
-    ogl_node_color(cube2, 0.3f, 0.1f, 0.9f);
-    ogl_node* trans1 = ogl_node_trans_create(1.0f, 1.0f, 1.0f, cube2);
-    ogl_node* rotate1 = ogl_node_rotate_create(20.0f, 20.0f, 20.0f, trans1);
-    //ogl_node* root = ogl_node_rotate_create(10.0f, 10.0f, 10.0f, cube1);
-    ogl_node* root = rotate1;
+    ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
+    ogl_node_color(cube1, 0.3f, 0.1f, 0.9f);
+    ogl_node* trans1 = ogl_node_trans_create(-1.0f, -1.0f, -1.0f, cube1);
+    rotate = ogl_node_rotate_create(2.0f, 0.0f, 0.0f, trans1);
+    ogl_node* trans2 = ogl_node_trans_create(0.0f, 0.0f, 0.0f, rotate);
+    ogl_node* root = trans2;
     ogl_node_realize(root, program);
     oglObjectRoot = root;
 }
 
 void draw_scene() {
-    //ogl_node_rotate_change(rotate, 0.0, 0.01, 0.0);
     ogl_node_render(oglObjectRoot, ostereo->projection_matrix, ostereo->view_matrix, ostereo->model_matrix);
+}
+
+void timer_func(int value) {
+    ogl_node_rotate_change(rotate, 0.0, 0.01, 0.0);
+    glutPostRedisplay();
+    glutTimerFunc(rotate_delay, timer_func, 0);
 }
 
 GLvoid reshape(int w, int h) {
@@ -42,6 +48,7 @@ void initWindowingSystem(int *argc, char **argv, int width, int height) {
     glutCreateWindow("Stereo Test");
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
+    glutTimerFunc(rotate_delay, timer_func, 0);
 }
 
 void init(int *argc, char **argv) {

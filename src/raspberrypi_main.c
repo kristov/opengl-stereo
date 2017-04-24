@@ -13,10 +13,8 @@ void createObjectTree(GLuint program) {
     ogl_node* cube1 = ogl_node_cube_create(2.0f, 2.0f, 2.0f);
     ogl_node_color(cube1, 0.3f, 0.1f, 0.9f);
     ogl_node* trans1 = ogl_node_trans_create(-1.0f, -1.0f, -1.0f, cube1);
-    ogl_node* rotate1 = ogl_node_rotate_create(2.0f, 0.0f, 0.0f, trans1);
-    rotate = rotate1;
-    //ogl_node* rotate1 = ogl_node_rotate_create(20.0f, 10.0f, 15.0f, trans1);
-    ogl_node* trans2 = ogl_node_trans_create(0.0f, 0.0f, 0.0f, rotate1);
+    rotate = ogl_node_rotate_create(2.0f, 0.0f, 0.0f, trans1);
+    ogl_node* trans2 = ogl_node_trans_create(0.0f, 0.0f, 0.0f, rotate);
     ogl_node* root = trans2;
     ogl_node_realize(root, program);
     oglObjectRoot = root;

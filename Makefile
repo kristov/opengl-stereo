@@ -3,10 +3,10 @@ OBJS := lib/opengl_stereo.o lib/ogl_objecttree.o lib/ogl_shader_loader.o lib/esm
 CFLAGS := -Wall -Werror -ggdb
 EXTCOM := -lm -lconfig
 
-x11_glut : EXTGL := -lpthread -lGL -lGLU -lglut
-x11_glut : INCLUDEDIRS :=
-x11_glut : LINKDIRS :=
-x11_glut : PREPROC :=
+EXTGL := -lpthread -lGL -lGLU -lglut
+INCLUDEDIRS :=
+LINKDIRS :=
+PREPROC :=
 
 rpi_egl : EXTGL := -lbcm_host -lEGL -lGLESv2
 rpi_egl : INCLUDEDIRS := -I/opt/vc/include
@@ -31,6 +31,9 @@ x11_glut: src/desktop_main.c $(OBJS)
 	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
 
 rpi_egl: src/raspberrypi_main.c $(OBJS)
+	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
+
+x11_glut_config: src/x11_glut_config.c $(OBJS)
 	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
 
 clean:

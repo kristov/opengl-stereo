@@ -45,3 +45,6 @@ typedef struct opengl_stereo {
 void opengl_stereo_reshape(opengl_stereo* ostereo, int w, int h);
 void opengl_stereo_display(opengl_stereo* ostereo);
 opengl_stereo* opengl_stereo_create(int width, int height);
+
+double opengl_stereo_get_config_value(opengl_stereo* ostereo, char* name);
+void opengl_stereo_set_config_value(opengl_stereo* ostereo, char* name, double value);

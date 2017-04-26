@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #ifdef RASPBERRYPI
 #include <GLES/gl.h>
@@ -378,6 +379,69 @@ void initGL(opengl_stereo* ostereo) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
+}
+
+double opengl_stereo_get_config_value(opengl_stereo* ostereo, char* name) {
+    double value;
+    if (config_lookup_float(ostereo->config, name, &value) == CONFIG_TRUE) {
+        return value;
+    }
+    return 0.0;
+}
+
+void opengl_stereo_set_config_value_int(opengl_stereo* ostereo, char* name, double value) {
+    config_setting_t* setting = config_lookup(ostereo->config, name);
+    if (!setting)
+        return;
+    config_setting_set_float(setting, value);
+}
+
+void opengl_stereo_set_config_value(opengl_stereo* ostereo, char* name, double value) {
+    int needs_save = 0;
+
+    printf("%s: %0.4f\n", name, value);
+    opengl_stereo_set_config_value_int(ostereo, name, value);
+
+    if (!strcmp(name, "IOD")) {
+        ostereo->IOD = value;
+        needs_save = 1;
+    }
+
+    if (!strcmp(name, "depthZ")) {
+        ostereo->depthZ = value;
+        needs_save = 1;
+    }
+
+    if (!strcmp(name, "fovy")) {
+        ostereo->fovy = value;
+        needs_save = 1;
+    }
+
+    if (!strcmp(name, "nearZ")) {
+        ostereo->nearZ = value;
+        needs_save = 1;
+    }
+
+    if (!strcmp(name, "farZ")) {
+        ostereo->farZ = value;
+        needs_save = 1;
+    }
+
+    if (!strcmp(name, "screenZ")) {
+        ostereo->screenZ = value;
+        needs_save = 1;
+    }
+
+    if (needs_save) {
+        char* filename = malloc(sizeof(char) * 200);
+        int written = snprintf(filename, 200, "/home/%s/.openglstereorc", getenv("USER"));
+        if (written == 200) {
+            fprintf(stderr, "path to .openglstereorc is too long!\n");
+            return;
+        }
+        config_write_file(ostereo->config, filename);
+        opengl_stereo_set_frustum(ostereo);
+    }
 }
 
 int opengl_stereo_load_config_value(config_t* config, config_setting_t* root, char* name, double* location, double def) {

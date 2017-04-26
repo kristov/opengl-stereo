@@ -1,13 +1,14 @@
 CC := gcc
 OBJS := lib/opengl_stereo.o lib/ogl_objecttree.o lib/ogl_shader_loader.o lib/esm.o
 CFLAGS := -Wall -Werror -ggdb
+EXTCOM := -lm -lconfig
 
-x11_glut : EXTERNAL := -lpthread -lGL -lGLU -lglut
+x11_glut : EXTGL := -lpthread -lGL -lGLU -lglut
 x11_glut : INCLUDEDIRS :=
 x11_glut : LINKDIRS :=
 x11_glut : PREPROC :=
 
-rpi_egl : EXTERNAL := -lbcm_host -lEGL -lGLESv2
+rpi_egl : EXTGL := -lbcm_host -lEGL -lGLESv2
 rpi_egl : INCLUDEDIRS := -I/opt/vc/include
 rpi_egl : LINKDIRS := -L/opt/vc/lib
 rpi_egl : PREPROC := -DRASPBERRYPI
@@ -27,10 +28,10 @@ lib/esm.o: src/esm.c
 	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
 
 x11_glut: src/desktop_main.c $(OBJS)
-	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) -lm $(EXTERNAL) -o $@ $(OBJS) $<
+	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
 
 rpi_egl: src/raspberrypi_main.c $(OBJS)
-	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) -lm $(EXTERNAL) -o $@ $(OBJS) $<
+	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
 
 clean:
 	rm -f lib/*

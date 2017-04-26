@@ -380,14 +380,70 @@ void initGL(opengl_stereo* ostereo) {
     glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
 }
 
-void opengl_stereo_init_screen_info(opengl_stereo* ostereo) {
-    ostereo->aspect = ( ostereo->width / 2 ) / ostereo->height;
-    ostereo->depthZ = -10.0;       // depth of the object drawing
-    ostereo->fovy = 45;            // field of view in y-axis
-    ostereo->nearZ = 3.0;          // near clipping plane
-    ostereo->farZ = 30.0;          // far clipping plane
-    ostereo->screenZ = 10.0;       // screen projection plane
-    ostereo->IOD = 0.5;            // intraocular distance
+int opengl_stereo_load_config_value(config_t* config, config_setting_t* root, char* name, double* location, double def) {
+    double value;
+    if (config_lookup_float(config, name, &value) == CONFIG_TRUE) {
+        *location = value;
+        return 0;
+    }
+    else {
+        *location = def;
+        config_setting_t* new = config_setting_add(root, name, CONFIG_TYPE_FLOAT);
+        config_setting_set_float(new, def);
+        return 1;
+    }
+}
+
+void opengl_stereo_load_defaults(opengl_stereo* ostereo) {
+    int needs_save = 0;
+
+    config_setting_t* root = config_root_setting(ostereo->config);
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "IOD", &ostereo->IOD, 0.5))
+        needs_save = 1;
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "depthZ", &ostereo->depthZ, -10.0))
+        needs_save = 1;
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "fovy", &ostereo->fovy, 45))
+        needs_save = 1;
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "nearZ", &ostereo->nearZ, 3.0))
+        needs_save = 1;
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "farZ", &ostereo->farZ, 30.0))
+        needs_save = 1;
+
+    if (opengl_stereo_load_config_value(ostereo->config, root, "screenZ", &ostereo->screenZ, 10.0))
+        needs_save = 1;
+
+    if (needs_save) {
+        char* filename = malloc(sizeof(char) * 200);
+        int written = snprintf(filename, 200, "/home/%s/.openglstereorc", getenv("USER"));
+        if (written == 200) {
+            fprintf(stderr, "path to .openglstereorc is too long!\n");
+            return;
+        }
+        config_write_file(ostereo->config, filename);
+    }
+}
+
+void opengl_stereo_load_config(opengl_stereo* ostereo) {
+    config_t* config;
+    config = malloc(sizeof(config_t));
+    config_init(config);
+
+    char* filename = malloc(sizeof(char) * 200);
+    int written = snprintf(filename, 200, "/home/%s/.openglstereorc", getenv("USER"));
+    if (written == 200) {
+        fprintf(stderr, "path to .openglstereorc is too long %d!\n", written);
+        return;
+    }
+
+    config_read_file(config, filename);
+    ostereo->config = config;
+
+    opengl_stereo_load_defaults(ostereo);
 }
 
 void opengl_stereo_init_system(opengl_stereo* ostereo) {
@@ -399,7 +455,7 @@ void opengl_stereo_init_system(opengl_stereo* ostereo) {
 }
 
 void opengl_stereo_init(opengl_stereo* ostereo) {
-    opengl_stereo_init_screen_info(ostereo);
+    opengl_stereo_load_config(ostereo);
     opengl_stereo_init_system(ostereo);
 }
 
@@ -441,6 +497,7 @@ opengl_stereo* opengl_stereo_create(int width, int height) {
     opengl_stereo* ostereo = opengl_stereo_new();
     ostereo->width = width;
     ostereo->height = height;
+    ostereo->aspect = ( ostereo->width / 2 ) / ostereo->height;
     ostereo->left_camera = opengl_stereo_camera_new();
     ostereo->right_camera = opengl_stereo_camera_new();
     ostereo->screen_buffers = opengl_stereo_buffer_store_new();

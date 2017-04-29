@@ -141,7 +141,9 @@ int main(int argc, char** argv) {
     const GLubyte* shaderv = glGetString(GL_SHADING_LANGUAGE_VERSION);
     fprintf(stderr, "shaderv: %s\n", shaderv);
 
-    ostereo = opengl_stereo_create((int)width, (int)height);
+    double physical_width = 1.2;
+
+    ostereo = opengl_stereo_create((int)width, (int)height, physical_width);
     ostereo->draw_scene_function = &drawScene;
     createObjectTree(ostereo->default_scene_shader_program_id);
 

@@ -294,6 +294,13 @@ void opengl_stereo_render_scene_to_buffers(opengl_stereo* ostereo) {
 
 void opengl_stereo_render_left_buffer_to_window(opengl_stereo* ostereo) {
     GLint tex0;
+    GLuint m_projection;
+
+    esmLoadIdentity(ostereo->screen_matrix);
+    esmTranslatef(ostereo->screen_matrix, -1.0 + ostereo->texture_shift, -1.0, 0.0);
+
+    m_projection = glGetUniformLocation(ostereo->screen_shader_program_id, "m_projection");
+    glUniformMatrix4fv(m_projection, 1, GL_FALSE, ostereo->screen_matrix);
 
     glViewport(0, 0, ostereo->width / 2, ostereo->height);
 
@@ -306,6 +313,13 @@ void opengl_stereo_render_left_buffer_to_window(opengl_stereo* ostereo) {
 
 void opengl_stereo_render_right_buffer_to_window(opengl_stereo* ostereo) {
     GLint texLoc;
+    GLuint m_projection;
+
+    esmLoadIdentity(ostereo->screen_matrix);
+    esmTranslatef(ostereo->screen_matrix, -1.0 - ostereo->texture_shift, -1.0, 0.0);
+
+    m_projection = glGetUniformLocation(ostereo->screen_shader_program_id, "m_projection");
+    glUniformMatrix4fv(m_projection, 1, GL_FALSE, ostereo->screen_matrix);
 
     glViewport(ostereo->width / 2, 0, ostereo->width / 2, ostereo->height);
 
@@ -317,22 +331,13 @@ void opengl_stereo_render_right_buffer_to_window(opengl_stereo* ostereo) {
 }
 
 void opengl_stereo_render_buffers_to_window(opengl_stereo* ostereo) {
-    GLuint m_projection;
 
     glUseProgram(ostereo->screen_shader_program_id);
-
-    esmLoadIdentity(ostereo->screen_matrix);
-    //esmFrustumf(ostereo->screen_matrix, -1, 1, -1, 1, 0.0, 40.0);
-    esmTranslatef(ostereo->screen_matrix, -1.0, -1.0, 0.0);
-
-    m_projection = glGetUniformLocation(ostereo->screen_shader_program_id, "m_projection");
-    glUniformMatrix4fv(m_projection, 1, GL_FALSE, ostereo->screen_matrix);
 
     ostereo->barrel_power_id = glGetUniformLocation(ostereo->screen_shader_program_id, "barrel_power");
     glUniform1f(ostereo->barrel_power_id, 1.1f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //glDrawBuffer(GL_BACK);
     glClearColor(0.0f, 0.8f, 0.8f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -512,10 +517,23 @@ void opengl_stereo_load_config(opengl_stereo* ostereo) {
 
 void opengl_stereo_init_system(opengl_stereo* ostereo) {
     initGL(ostereo);
+
+    ostereo->aspect = ( ostereo->width / 2 ) / ostereo->height;
+    double half_screen_width = ostereo->physical_width / 2;
+    double half_iod = ostereo->IOD / 2;
+    double correction_ratio = 2 / ostereo->physical_width;
+    ostereo->texture_shift = (half_screen_width - half_iod) * correction_ratio;
+
+    //fprintf(stderr, "           Physical width (dm): %0.2f\n", ostereo->physical_width);
+    //fprintf(stderr, "              Correction ratio: %0.2f\n", correction_ratio);
+    //fprintf(stderr, "(half_screen_width - half_iod): %0.2f\n", (half_screen_width - half_iod));
+    //fprintf(stderr, "                 Texture shift: %0.2f\n", ostereo->texture_shift);
+
     opengl_stereo_load_screen_shader(ostereo);
     opengl_stereo_set_frustum(ostereo);
     opengl_stereo_create_render_textures(ostereo);
     opengl_stereo_store_screen_plane(ostereo);
+
 }
 
 void opengl_stereo_init(opengl_stereo* ostereo) {
@@ -557,11 +575,11 @@ opengl_stereo* opengl_stereo_new() {
     return ostereo;
 }
 
-opengl_stereo* opengl_stereo_create(int width, int height) {
+opengl_stereo* opengl_stereo_create(int width, int height, double physical_width) {
     opengl_stereo* ostereo = opengl_stereo_new();
     ostereo->width = width;
     ostereo->height = height;
-    ostereo->aspect = ( ostereo->width / 2 ) / ostereo->height;
+    ostereo->physical_width = physical_width;
     ostereo->left_camera = opengl_stereo_camera_new();
     ostereo->right_camera = opengl_stereo_camera_new();
     ostereo->screen_buffers = opengl_stereo_buffer_store_new();

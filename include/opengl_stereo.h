@@ -25,6 +25,8 @@ typedef struct opengl_stereo {
     double farZ;
     double screenZ;
     double IOD;
+    double physical_width;
+    double texture_shift;
     config_t* config;
     GLuint screen_plane_vdb;
     GLuint screen_plane_idb;
@@ -44,7 +46,7 @@ typedef struct opengl_stereo {
 
 void opengl_stereo_reshape(opengl_stereo* ostereo, int w, int h);
 void opengl_stereo_display(opengl_stereo* ostereo);
-opengl_stereo* opengl_stereo_create(int width, int height);
+opengl_stereo* opengl_stereo_create(int width, int height, double physical_width);
 
 double opengl_stereo_get_config_value(opengl_stereo* ostereo, char* name);
 void opengl_stereo_set_config_value(opengl_stereo* ostereo, char* name, double value);

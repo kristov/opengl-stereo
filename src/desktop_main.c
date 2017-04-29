@@ -54,9 +54,10 @@ void initWindowingSystem(int *argc, char **argv, int width, int height) {
 void init(int *argc, char **argv) {
     int width = 1024;
     int height = 768;
+    double physical_width = 1.347;
 
     initWindowingSystem(argc, argv, width, height);
-    ostereo = opengl_stereo_create(width, height);
+    ostereo = opengl_stereo_create(width, height, physical_width);
     ostereo->draw_scene_function = &draw_scene;
     createObjectTree(ostereo->default_scene_shader_program_id);
 }

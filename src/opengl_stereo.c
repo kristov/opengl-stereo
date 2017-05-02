@@ -378,12 +378,10 @@ void opengl_stereo_display(opengl_stereo* ostereo) {
 }
 
 void initGL(opengl_stereo* ostereo) {
-    GLfloat lightpos[] = { 0.5f, 1.0f, 1.0f, 0.0f };
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
 }
 
 double opengl_stereo_get_config_value(opengl_stereo* ostereo, char* name) {

@@ -243,8 +243,8 @@ void ogl_object_trans_render(ogl_object_trans* trans, GLfloat* projection_matrix
 }
 
 void ogl_object_mesh_render(ogl_object_mesh* mesh, GLfloat* projection_matrix, GLfloat* view_matrix, GLfloat* model_matrix) {
-    GLuint b_vertex, b_normal, b_color, m_mvp, m_mv, m_normal;
-    GLfloat* normal_matrix;
+    GLuint b_vertex, b_normal, b_color, m_mvp, m_mv, m_m;
+    //GLfloat* normal_matrix;
     GLfloat* mvp_matrix;
     GLfloat* mv_matrix;
 
@@ -254,7 +254,7 @@ void ogl_object_mesh_render(ogl_object_mesh* mesh, GLfloat* projection_matrix, G
 
     mv_matrix = esmCreateCopy(view_matrix);
     esmMultiply(mv_matrix, model_matrix);
-    normal_matrix = esmNormalMatrixFromProjection(mv_matrix);
+    //normal_matrix = esmNormalMatrixFromProjection(mv_matrix);
 
     mvp_matrix = esmCreateCopy(projection_matrix);
     esmMultiply(mvp_matrix, view_matrix);
@@ -283,13 +283,12 @@ void ogl_object_mesh_render(ogl_object_mesh* mesh, GLfloat* projection_matrix, G
     glUniformMatrix4fv(m_mv, 1, GL_FALSE, mv_matrix);
     glEnableVertexAttribArray(m_mv);
 
-    m_normal = glGetUniformLocation(mesh->shader_program_id, "m_normal");
-    glUniformMatrix4fv(m_normal, 1, GL_FALSE, model_matrix);
-    glEnableVertexAttribArray(m_normal);
+    m_m = glGetUniformLocation(mesh->shader_program_id, "m_m");
+    glUniformMatrix4fv(m_m, 1, GL_FALSE, model_matrix);
+    glEnableVertexAttribArray(m_m);
 
     glDrawElements(GL_TRIANGLES, mesh->nr_indicies, GL_UNSIGNED_SHORT, NULL);
 
-    esmDestroy(normal_matrix);
     esmDestroy(mvp_matrix);
     esmDestroy(mv_matrix);
 }
@@ -457,22 +456,26 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
     voff += 3;
 
     voff = 0;
+
+    // [+-1, 0, 0],   [0,+-1,0],    [0,0,+-1]
+    // (Left/Right), (Top/Bottom), (Front/Back)
+
     // front
     norms[voff + 0] = 0.0f; // 0
-    norms[voff + 1] = 1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 1
-    norms[voff + 1] = 1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 2
-    norms[voff + 1] = 1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 3
-    norms[voff + 1] = 1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
 
     // left
@@ -513,56 +516,56 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
 
     // top
     norms[voff + 0] = 0.0f; // 12
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 1] = 1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 13
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 1] = 1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 14
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 1] = 1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 15
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 1] = 1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
 
     // bottom
     norms[voff + 0] = 0.0f; // 16
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 1] = -1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 17
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 1] = -1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 18
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 1] = -1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 19
-    norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 1] = -1.0f;
+    norms[voff + 2] = 0.0f;
     voff += 3;
 
     // back
     norms[voff + 0] = 0.0f; // 20
-    norms[voff + 1] = -1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 21
-    norms[voff + 1] = -1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 22
-    norms[voff + 1] = -1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 23
-    norms[voff + 1] = -1.0f;
-    norms[voff + 2] = 0.0f;
+    norms[voff + 1] = 0.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
 
     // front

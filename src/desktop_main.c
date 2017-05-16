@@ -6,6 +6,7 @@
 #include "ogl_objecttree.h"
 
 int rotate_delay = 30;
+int frame = 0, time, timebase = 0;
 
 opengl_stereo* ostereo;
 ogl_node* oglObjectRoot;
@@ -38,6 +39,15 @@ GLvoid reshape(int w, int h) {
 
 GLvoid display(GLvoid) {
     opengl_stereo_display(ostereo);
+
+    frame++;
+    time = glutGet(GLUT_ELAPSED_TIME);
+    if (time - timebase > 1000) {
+        printf("FPS:%4.2f\n", frame * 1000.0 / (time - timebase));
+        timebase = time;
+        frame = 0;
+    }
+
     glutSwapBuffers();
 }
 

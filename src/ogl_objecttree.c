@@ -463,19 +463,19 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
     // front
     norms[voff + 0] = 0.0f; // 0
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 1
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 2
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 3
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = 1.0f;
+    norms[voff + 2] = -1.0f;
     voff += 3;
 
     // left
@@ -553,19 +553,19 @@ void ogl_object_cube_generate_geometry(ogl_object_mesh* mesh, GLfloat x, GLfloat
     // back
     norms[voff + 0] = 0.0f; // 20
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 21
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 22
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
     norms[voff + 0] = 0.0f; // 23
     norms[voff + 1] = 0.0f;
-    norms[voff + 2] = -1.0f;
+    norms[voff + 2] = 1.0f;
     voff += 3;
 
     // front

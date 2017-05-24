@@ -15,6 +15,12 @@ rpi_egl : PREPROC := -DRASPBERRYPI
 
 all: x11_glut
 
+lib/libopenglstereo.so: lib/libopenglstereo.o lib/esm.o src/opengl_stereo.c
+	$(CC) $(CFLAGS) -shared -Iinclude $(INCLUDEDIRS) -o $@ lib/libopenglstereo.o lib/ogl_shader_loader.o lib/esm.o
+
+lib/libopenglstereo.o: src/opengl_stereo.c lib/ogl_shader_loader.o
+	$(CC) $(CFLAGS) -fpic -Iinclude $(INCLUDEDIRS) -c -o $@ $<
+
 lib/opengl_stereo.o: src/opengl_stereo.c
 	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
 

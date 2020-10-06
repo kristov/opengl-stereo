@@ -1,47 +1,24 @@
 CC := gcc
-OBJS := lib/opengl_stereo.o lib/ogl_objecttree.o lib/ogl_shader_loader.o lib/esm.o
-CFLAGS := -Wall -Werror -ggdb
-EXTCOM := -lm -lconfig
+CFLAGS := -Wall -Werror
+INCD := -I. $(shell pkg-bee --cflags gl-matrix)
 
-EXTGL := -lpthread -lGL -lGLU -lglut
-INCLUDEDIRS :=
-LINKDIRS :=
-PREPROC :=
+#EXTCOM := -lm -lconfig
 
-rpi_egl : EXTGL := -lbcm_host -lEGL -lGLESv2
-rpi_egl : INCLUDEDIRS := -I/opt/vc/include
-rpi_egl : LINKDIRS := -L/opt/vc/lib
-rpi_egl : PREPROC := -DRASPBERRYPI
+OBJECTS :=
+OBJECTS += opengl_stereo.o
 
-all: x11_glut
+HEADERS := $(OBJECTS:.o=.h)
 
-lib/libopenglstereo.so: lib/libopenglstereo.o lib/esm.o src/opengl_stereo.c
-	$(CC) $(CFLAGS) -shared -Iinclude $(INCLUDEDIRS) -o $@ lib/libopenglstereo.o lib/ogl_shader_loader.o lib/esm.o
+all: opengl-stereo.a
 
-lib/libopenglstereo.o: src/opengl_stereo.c lib/ogl_shader_loader.o
-	$(CC) $(CFLAGS) -fpic -Iinclude $(INCLUDEDIRS) -c -o $@ $<
+opengl-stereo.h:
+	cat $(HEADERS) > $@
 
-lib/opengl_stereo.o: src/opengl_stereo.c
-	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
+%.o: %.c %.h opengl-stereo.h
+	$(CC) $(CFLAGS) $(INCD) -c -o $@ $<
 
-lib/ogl_objecttree.o: src/ogl_objecttree.c
-	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
-
-lib/ogl_shader_loader.o: src/ogl_shader_loader.c
-	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
-
-lib/esm.o: src/esm.c
-	$(CC) $(CFLAGS) $(PREPROC) -Iinclude $(INCLUDEDIRS) -c -o $@ $<
-
-x11_glut: src/desktop_main.c $(OBJS)
-	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
-
-rpi_egl: src/raspberrypi_main.c $(OBJS)
-	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
-
-x11_glut_config: src/x11_glut_config.c $(OBJS)
-	$(CC) $(CFLAGS) $(PREPROC) $(LINKDIRS) -Iinclude $(INCLUDEDIRS) $(EXTCOM) $(EXTGL) -o $@ $(OBJS) $<
+opengl-stereo.a: $(OBJECTS)
+	ar -crs $@ $(OBJECTS)
 
 clean:
-	rm -f lib/*
-	rm -f x11_glut rpi_egl
+	rm -f $(OBJECTS) opengl-stereo.h opengl-stereo.a

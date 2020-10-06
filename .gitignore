@@ -1,2 +1,3 @@
-test
-lib/*
+opengl-stereo.a
+opengl-stereo.h
+*.o

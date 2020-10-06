@@ -1,0 +1,5 @@
+Name: opengl-stereo
+Description: VR 3D stereo on a budget
+Version: 0.1.0
+Libs: -L${pcfiledir} -l:opengl-stereo.a
+Cflags: -I${pcfiledir}

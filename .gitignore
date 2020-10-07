@@ -1,3 +1,4 @@
 opengl-stereo.a
 opengl-stereo.h
 *.o
+examples/glut_square
